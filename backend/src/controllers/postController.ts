@@ -30,11 +30,7 @@ class PostController extends BaseController<IPost> {
     }
 
     async like(req: AuthRequest, res: Response): Promise<void> {
-        const userId = req.user?._id;
-        if (!userId) {
-            res.status(401).json({ error: "Unauthorized" });
-            return;
-        }
+        const userId = req.user!._id;
         try {
             const post = await Post.findById(req.params.id);
             if (!post) {
