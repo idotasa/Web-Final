@@ -1,6 +1,7 @@
 import { Response } from "express";
 import Post from "../models/postModel";
 import Comment from "../models/commentModel";
+import User from "../models/userModel";
 import BaseController from "./baseController";
 import { AuthRequest } from "../middleware/authMiddleware";
 import { IPost } from "../models/postModel";
@@ -10,6 +11,39 @@ class PostController extends BaseController<IPost> {
         super(Post, "owner");
     }
 
+    async feed(req: AuthRequest, res: Response): Promise<void> {
+        try {
+            const pag = this.parsePagination(req);
+            const user = await User.findById(req.user!._id).select("following").lean();
+            if (!user) {
+                res.status(404).json({ error: "User not found" });
+                return;
+            }
+
+            const posts = await Post.find({ owner: { $in: user.following } })
+                .sort({ createdAt: -1 })
+                .skip(pag.skip)
+                .limit(pag.limit + 1)
+                .populate("owner", "username imgUrl")
+                .lean();
+
+            const hasMore = posts.length > pag.limit;
+            if (hasMore) posts.pop();
+
+            const data = await Promise.all(
+                posts.map(async (post) => ({
+                    ...post,
+                    likesCount: post.likes?.length || 0,
+                    commentsCount: await Comment.countDocuments({ postId: post._id }),
+                }))
+            );
+
+            res.json({ data, page: pag.page, hasMore });
+        } catch (error) {
+            res.status(500).json({ error: error instanceof Error ? error.message : "An unknown error occurred" });
+        }
+    }
+
     async delete(req: AuthRequest, res: Response): Promise<void> {
         try {
             const post = await Post.findById(req.params.id);
@@ -17,7 +51,7 @@ class PostController extends BaseController<IPost> {
                 res.status(404).json({ error: "Post not found" });
                 return;
             }
-            if (post.owner.toString() !== req.user?._id) {
+            if (post.owner.toString() !== req.user!._id) {
                 res.status(403).json({ error: "Forbidden" });
                 return;
             }
