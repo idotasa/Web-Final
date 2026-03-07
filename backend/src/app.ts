@@ -19,7 +19,6 @@ const initApp = (): Promise<Express> => {
         mongoose
             .connect(dbUri)
             .then(() => {
-                console.log("Connected to MongoDB");
                 const app = express();
                 app.use(express.json());
 
@@ -32,10 +31,7 @@ const initApp = (): Promise<Express> => {
 
                 resolve(app);
             })
-            .catch((err) => {
-                console.error("Failed to connect to MongoDB:", err);
-                reject(err);
-            });
+            .catch(reject);
     });
 };
 

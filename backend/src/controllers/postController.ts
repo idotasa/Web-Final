@@ -8,7 +8,7 @@ import { IPost } from "../models/postModel";
 
 class PostController extends BaseController<IPost> {
     constructor() {
-        super(Post, "owner");
+        super(Post, "owner", null);
     }
 
     async feed(req: AuthRequest, res: Response): Promise<void> {
@@ -40,7 +40,7 @@ class PostController extends BaseController<IPost> {
 
             res.json({ data, page: pag.page, hasMore });
         } catch (error) {
-            res.status(500).json({ error: error instanceof Error ? error.message : "An unknown error occurred" });
+            res.status(500).json({ error: "An unknown error occurred" });
         }
     }
 
@@ -59,7 +59,7 @@ class PostController extends BaseController<IPost> {
             await Post.findByIdAndDelete(req.params.id);
             res.json(post);
         } catch (error) {
-            res.status(500).json({ error: error instanceof Error ? error.message : "An unknown error occurred" });
+            res.status(500).json({ error: "An unknown error occurred" });
         }
     }
 
@@ -82,7 +82,7 @@ class PostController extends BaseController<IPost> {
             const updatedPost = await Post.findById(req.params.id);
             res.json({ likes: updatedPost!.likes.length, isLiked: !alreadyLiked });
         } catch (error) {
-            res.status(500).json({ error: error instanceof Error ? error.message : "An unknown error occurred" });
+            res.status(500).json({ error: "An unknown error occurred" });
         }
     }
 }
