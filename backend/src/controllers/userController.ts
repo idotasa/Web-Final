@@ -10,6 +10,22 @@ class UserController extends BaseController<IUser> {
         super(User, "_id", "-password -refreshTokens");
     }
 
+    async search(req: Request, res: Response): Promise<void> {
+        try {
+            const q = req.query.q as string;
+            if (!q) {
+                res.status(400).json({ error: "Query parameter 'q' is required" });
+                return;
+            }
+            const users = await User.find({ username: { $regex: q, $options: "i" } })
+                .select("_id username imgUrl")
+                .limit(10);
+            res.json(users);
+        } catch (error) {
+            res.status(500).json({ error: error instanceof Error ? error.message : "An unknown error occurred" });
+        }
+    }
+
     async toggleFollow(req: AuthRequest, res: Response): Promise<void> {
         const targetId = req.params.id;
         const myId = req.user!._id;
