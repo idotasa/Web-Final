@@ -72,13 +72,15 @@ class PostController extends BaseController<IPost> {
                 return;
             }
             const alreadyLiked = post.likes.some((id) => id.toString() === userId);
+
             if (alreadyLiked) {
-                post.likes = post.likes.filter((id) => id.toString() !== userId);
+                await Post.findByIdAndUpdate(req.params.id, { $pull: { likes: userId } });
             } else {
-                post.likes.push(userId as any);
+                await Post.findByIdAndUpdate(req.params.id, { $addToSet: { likes: userId } });
             }
-            await post.save();
-            res.json({ likes: post.likes.length, isLiked: !alreadyLiked });
+
+            const updatedPost = await Post.findById(req.params.id);
+            res.json({ likes: updatedPost!.likes.length, isLiked: !alreadyLiked });
         } catch (error) {
             res.status(500).json({ error: error instanceof Error ? error.message : "An unknown error occurred" });
         }

@@ -43,11 +43,15 @@ class UserController extends BaseController<IUser> {
             const isFollowing = targetUser.followers.some((id) => id.toString() === myId);
 
             if (isFollowing) {
-                await User.findByIdAndUpdate(myId, { $pull: { following: targetId } });
-                await User.findByIdAndUpdate(targetId, { $pull: { followers: myId } });
+                await Promise.all([
+                    User.findByIdAndUpdate(myId, { $pull: { following: targetId } }),
+                    User.findByIdAndUpdate(targetId, { $pull: { followers: myId } })
+                ]);
             } else {
-                await User.findByIdAndUpdate(myId, { $addToSet: { following: targetId } });
-                await User.findByIdAndUpdate(targetId, { $addToSet: { followers: myId } });
+                await Promise.all([
+                    User.findByIdAndUpdate(myId, { $addToSet: { following: targetId } }),
+                    User.findByIdAndUpdate(targetId, { $addToSet: { followers: myId } })
+                ]);
             }
 
             const updatedTarget = await User.findById(targetId);
