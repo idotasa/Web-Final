@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, test } from "@jest/globals";
+import { afterAll, afterEach, beforeAll, describe, expect, jest, test } from "@jest/globals";
 import request from "supertest";
 import { Express } from "express";
 import mongoose from "mongoose";
@@ -13,9 +13,15 @@ import {
 } from "./testUtils";
 import {
   COMMENT_NO_AUTH_CONTENT,
+  COMMENT_OTHER_DELETE_USER,
+  COMMENT_OTHER_USER,
   COMMENT_POST_DATA,
   COMMENT_USER,
   FIRST_COMMENT_CONTENT,
+  MALFORMED_ID,
+  MALFORMED_POST_ID,
+  UNKNOWN_ERROR,
+  UNKNOWN_ERROR_MSG,
   UPDATED_COMMENT_CONTENT,
 } from "./tests_conf";
 
@@ -40,6 +46,10 @@ beforeAll(async () => {
 
 afterAll(async () => {
   await closeMongooseConnection();
+});
+
+afterEach(() => {
+  jest.restoreAllMocks();
 });
 
 describe("Comment API", () => {
@@ -90,6 +100,15 @@ describe("Comment API", () => {
     expect(res.body._id).toBe(commentId);
   });
 
+  test("GET /comment returns 500 with unknown error object", async () => {
+    jest.spyOn(Comment, "find").mockImplementationOnce(() => {
+      throw UNKNOWN_ERROR;
+    });
+    const res = await request(app).get("/comment");
+    expect(res.statusCode).toBe(500);
+    expect(res.body.error).toBe(UNKNOWN_ERROR_MSG);
+  });
+
   test("get non-existing comment returns 404", async () => {
     const fakeId = new mongoose.Types.ObjectId().toString();
     const res = await request(app).get(`/comment/${fakeId}`);
@@ -107,8 +126,8 @@ describe("Comment API", () => {
 
   test("update comment as another user is forbidden", async () => {
     const other = await createAndLoginTestUser(app, {
-      email: "comment_other@example.com",
-      username: "comment_other",
+      email: COMMENT_OTHER_USER.email,
+      username: COMMENT_OTHER_USER.username,
     });
     const res = await request(app)
       .put(`/comment/${commentId}`)
@@ -128,8 +147,8 @@ describe("Comment API", () => {
 
   test("delete comment as another user is forbidden", async () => {
     const other = await createAndLoginTestUser(app, {
-      email: "comment_other_delete@example.com",
-      username: "comment_other_delete",
+      email: COMMENT_OTHER_DELETE_USER.email,
+      username: COMMENT_OTHER_DELETE_USER.username,
     });
     const res = await request(app)
       .delete(`/comment/${commentId}`)
@@ -153,6 +172,34 @@ describe("Comment API", () => {
       .delete(`/comment/${fakeId}`)
       .set(authHeader(user.accessToken));
     expect(res.statusCode).toBe(404);
+  });
+
+  test("GET /comment/:id with malformed id returns 500", async () => {
+    const res = await request(app).get("/comment/" + MALFORMED_ID);
+    expect(res.statusCode).toBe(500);
+  });
+
+  test("PUT /comment/:id with malformed id returns 500", async () => {
+    const res = await request(app)
+      .put("/comment/" + MALFORMED_ID)
+      .set(authHeader(user.accessToken))
+      .send({ content: "fail" });
+    expect(res.statusCode).toBe(500);
+  });
+
+  test("DELETE /comment/:id with malformed id returns 500", async () => {
+    const res = await request(app)
+      .delete("/comment/" + MALFORMED_ID)
+      .set(authHeader(user.accessToken));
+    expect(res.statusCode).toBe(500);
+  });
+
+  test("POST /comment with malformed postId target returns 500", async () => {
+    const res = await request(app)
+      .post("/comment")
+      .set(authHeader(user.accessToken))
+      .send({ content: "fail", postId: MALFORMED_POST_ID });
+    expect(res.statusCode).toBe(500);
   });
 });
 

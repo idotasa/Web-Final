@@ -1,4 +1,5 @@
 export const TEST_PASSWORD = "1234567890";
+export const TEST_JWT_SECRET = "test-secret-only-for-automated-tests";
 
 // Auth tests
 export const AUTH_USER = {
@@ -8,6 +9,37 @@ export const AUTH_USER = {
 
 export const MISSING_EMAIL = "missing@example.com";
 export const WRONG_PASSWORD = "wrong-password";
+export const NOT_REGISTERED_EMAIL = "not_registered@example.com";
+export const INVALID_REFRESH_TOKEN = "invalid-refresh-token";
+export const MALFORMED_TOKEN = "not-a-jwt";
+export const INVALID_MONGO_URI = "mongodb://invalid-host-that-does-not-exist:27017/test";
+
+export const REGISTRATION_IMG_URL_CASE = {
+  email: "imgurl@example.com",
+  username: "imgurl_user",
+  imgUrl: "https://example.com/avatar.png",
+};
+
+export const REGISTRATION_ERROR_USER = {
+  email: "err500_register@example.com",
+  username: "err500_register",
+};
+
+export const DB_CREATE_FAILURE_MSG = "DB create failure";
+export const DB_LOGOUT_FAILURE_MSG = "DB logout failure";
+export const DB_REFRESH_FAILURE_MSG = "DB refresh failure";
+export const UNKNOWN_ERROR = "not an Error instance";
+export const UNKNOWN_ERROR_MSG = "An unknown error occurred";
+
+export const GHOST_USER = {
+  email: "ghost@example.com",
+  username: "ghost",
+};
+
+export const GHOST_REFRESH_USER = {
+  email: "ghost_refresh@example.com",
+  username: "ghost_refresh",
+};
 
 // Post tests
 export const POST_OWNER_USER = {
@@ -29,6 +61,13 @@ export const OWNER_POST_DATA = {
 };
 
 export const UPDATED_POST_TITLE = "Updated title";
+
+export const FEED_NOT_FOUND_USER = {
+  email: "feed_not_found@example.com",
+  username: "feed_not_found",
+};
+
+export const MALFORMED_ID = "123";
 
 // Comment tests
 export const COMMENT_USER = {
@@ -65,4 +104,20 @@ export const USER_B_POST_DATA = {
   title: "userB post",
   content: "to be deleted",
 };
+
+export const SEARCH_QUERY = "user_";
+export const UPDATE_USERNAME_NOAUTH = "noauth";
+export const UPDATE_USERNAME_HACKED = "hacked";
+
+export const COMMENT_OTHER_USER = {
+  email: "comment_other@example.com",
+  username: "comment_other",
+};
+
+export const COMMENT_OTHER_DELETE_USER = {
+  email: "comment_other_delete@example.com",
+  username: "comment_other_delete",
+};
+
+export const MALFORMED_POST_ID = "not-a-valid-id";
 

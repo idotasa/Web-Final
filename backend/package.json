@@ -7,7 +7,7 @@
     "dev": "nodemon ./src/server.ts",
     "build": "tsc",
     "start": "node ./dist/server.js",
-    "test": "tsc && jest --runInBand --detectOpenHandles --forceExit",
+    "test": "tsc && jest --coverage --runInBand --detectOpenHandles --forceExit",
     "test:auth": "tsc && jest --runInBand --detectOpenHandles --forceExit src/tests/auth.test.ts",
     "test:post": "tsc && jest --runInBand --detectOpenHandles --forceExit src/tests/post.test.ts",
     "test:comment": "tsc && jest --runInBand --detectOpenHandles --forceExit src/tests/comment.test.ts",

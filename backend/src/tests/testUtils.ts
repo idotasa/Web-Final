@@ -2,17 +2,13 @@ import { expect } from "@jest/globals";
 import { Express } from "express";
 import request from "supertest";
 import mongoose from "mongoose";
+import jwt from "jsonwebtoken";
 import User from "../models/userModel";
-import Post, { IPost } from "../models/postModel";
-import Comment, { IComment } from "../models/commentModel";
+import { TEST_JWT_SECRET } from "./tests_conf";
 
-export const clearDatabase = async () => {
-  await Promise.all([
-    User.deleteMany({}),
-    Post.deleteMany({}),
-    Comment.deleteMany({}),
-  ]);
-};
+// Ensure tests use a predictable secret and not the one from .env
+process.env.JWT_SECRET = TEST_JWT_SECRET;
+
 
 export interface TestUser {
   _id?: string;
@@ -68,5 +64,9 @@ export const closeMongooseConnection = async () => {
   if (mongoose.connection.readyState !== 0) {
     await mongoose.connection.close();
   }
+};
+
+export const signToken = (payload: object) => {
+  return jwt.sign(payload, TEST_JWT_SECRET);
 };
 

@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, test } from "@jest/globals";
+import { afterAll, afterEach, beforeAll, describe, expect, jest, test } from "@jest/globals";
 import request from "supertest";
 import { Express } from "express";
 import mongoose from "mongoose";
@@ -12,10 +12,14 @@ import {
   createAndLoginTestUser,
 } from "./testUtils";
 import {
+  FEED_NOT_FOUND_USER,
+  MALFORMED_ID,
   OWNER_POST_DATA,
   POST_FOLLOWER_USER,
   POST_NO_AUTH_TITLE,
   POST_OWNER_USER,
+  UNKNOWN_ERROR,
+  UNKNOWN_ERROR_MSG,
   UPDATED_POST_TITLE,
 } from "./tests_conf";
 
@@ -48,6 +52,10 @@ afterAll(async () => {
   await closeMongooseConnection();
 });
 
+afterEach(() => {
+  jest.restoreAllMocks();
+});
+
 describe("Post API", () => {
   let postId: string;
 
@@ -55,6 +63,21 @@ describe("Post API", () => {
     const res = await request(app).get("/post");
     expect(res.statusCode).toBe(200);
     expect(Array.isArray(res.body) || Array.isArray(res.body.data)).toBe(true);
+  });
+
+  test("GET /post with non-numeric page/limit falls back to defaults", async () => {
+    const res = await request(app).get("/post?page=abc&limit=xyz");
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toBeDefined();
+  });
+
+  test("GET /post with page & limit returns paginated response", async () => {
+    const res = await request(app).get("/post?page=1&limit=5");
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toHaveProperty("data");
+    expect(res.body).toHaveProperty("totalPages");
+    expect(res.body).toHaveProperty("total");
+    expect(res.body).toHaveProperty("page");
   });
 
   test("create post requires auth", async () => {
@@ -193,8 +216,8 @@ describe("Post API", () => {
 
   test("feed returns 404 when user not found", async () => {
     const tempUser = await createAndLoginTestUser(app, {
-      email: "feed_not_found@example.com",
-      username: "feed_not_found",
+      email: FEED_NOT_FOUND_USER.email,
+      username: FEED_NOT_FOUND_USER.username,
     });
     await User.deleteMany({ _id: tempUser._id });
 
@@ -202,6 +225,77 @@ describe("Post API", () => {
       .get("/post/feed")
       .set(authHeader(tempUser.accessToken));
     expect(res.statusCode).toBe(404);
+  });
+
+  test("feed() hasMore=true when posts exceed limit", async () => {
+    // create 3 posts as owner
+    for (let i = 0; i < 3; i++) {
+      await request(app)
+        .post("/post")
+        .set(authHeader(owner.accessToken))
+        .send({ title: `feed post ${i}`, content: "x" });
+    }
+
+    const res = await request(app)
+      .get("/post/feed?page=1&limit=2")
+      .set(authHeader(follower.accessToken));
+    expect(res.statusCode).toBe(200);
+    expect(res.body.hasMore).toBe(true);
+    expect(res.body.data.length).toBe(2);
+  });
+
+  test("DELETE /post/:id with malformed id returns 500", async () => {
+    const res = await request(app)
+      .delete("/post/" + MALFORMED_ID)
+      .set(authHeader(owner.accessToken));
+    expect(res.statusCode).toBe(500);
+  });
+
+  test("PUT /post/:id/like with malformed id returns 500", async () => {
+    const res = await request(app)
+      .put("/post/" + MALFORMED_ID + "/like")
+      .set(authHeader(owner.accessToken));
+    expect(res.statusCode).toBe(500);
+  });
+
+  test("GET /post returns 500 when DB throws", async () => {
+    jest.spyOn(Post, "find").mockImplementationOnce(() => {
+      throw new Error("any error");
+    });
+    const res = await request(app).get("/post");
+    expect(res.statusCode).toBe(500);
+    expect(res.body.error).toBe(UNKNOWN_ERROR_MSG);
+  });
+
+  test("GET /post/feed returns 500 when DB throws", async () => {
+    jest.spyOn(User, "findById").mockImplementationOnce(() => {
+      throw new Error("any error");
+    });
+    const res = await request(app)
+      .get("/post/feed")
+      .set(authHeader(owner.accessToken));
+    expect(res.statusCode).toBe(500);
+    expect(res.body.error).toBe(UNKNOWN_ERROR_MSG);
+  });
+
+  test("GET /post returns 500 with unknown error object", async () => {
+    jest.spyOn(Post, "find").mockImplementationOnce(() => {
+      throw UNKNOWN_ERROR;
+    });
+    const res = await request(app).get("/post");
+    expect(res.statusCode).toBe(500);
+    expect(res.body.error).toBe(UNKNOWN_ERROR_MSG);
+  });
+
+  test("GET /post/feed returns 500 with unknown error object", async () => {
+    jest.spyOn(User, "findById").mockImplementationOnce(() => {
+      throw UNKNOWN_ERROR;
+    });
+    const res = await request(app)
+      .get("/post/feed")
+      .set(authHeader(owner.accessToken));
+    expect(res.statusCode).toBe(500);
+    expect(res.body.error).toBe(UNKNOWN_ERROR_MSG);
   });
 });
 
