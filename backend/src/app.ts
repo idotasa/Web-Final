@@ -6,6 +6,7 @@ import authRoutes from "./routes/authRoutes";
 import postRoutes from "./routes/postRoutes";
 import commentRoutes from "./routes/commentRoutes";
 import userRoutes from "./routes/userRoutes";
+import { specs, swaggerUi } from "./swagger";
 
 const initApp = (): Promise<Express> => {
     return new Promise<Express>((resolve, reject) => {
@@ -21,6 +22,8 @@ const initApp = (): Promise<Express> => {
                 console.log("Connected to MongoDB");
                 const app = express();
                 app.use(express.json());
+
+                app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));
 
                 app.use("/auth", authRoutes);
                 app.use("/post", postRoutes);
