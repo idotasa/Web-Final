@@ -22,7 +22,7 @@ class UserController extends BaseController<IUser> {
                 .limit(10);
             res.json(users);
         } catch (error) {
-            res.status(500).json({ error: error instanceof Error ? error.message : "An unknown error occurred" });
+            res.status(500).json({ error: "An unknown error occurred" });
         }
     }
 
@@ -60,7 +60,7 @@ class UserController extends BaseController<IUser> {
                 followersCount: updatedTarget!.followers.length,
             });
         } catch (error) {
-            res.status(500).json({ error: error instanceof Error ? error.message : "An unknown error occurred" });
+            res.status(500).json({ error: "An unknown error occurred" });
         }
     }
 
@@ -74,7 +74,7 @@ class UserController extends BaseController<IUser> {
             }
             res.json(user[field]);
         } catch (error) {
-            res.status(500).json({ error: error instanceof Error ? error.message : "An unknown error occurred" });
+            res.status(500).json({ error: "An unknown error occurred" });
         }
     }
 

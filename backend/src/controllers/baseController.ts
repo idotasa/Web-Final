@@ -6,8 +6,7 @@ class BaseController<T extends Document> {
     model: Model<T>;
     ownerField: string | null;
     excludeFields: string | null;
-
-    constructor(model: Model<T>, ownerField: string | null = null, excludeFields: string | null = null) {
+    constructor(model: Model<T>, ownerField: string | null, excludeFields: string | null) {
         this.model = model;
         this.ownerField = ownerField;
         this.excludeFields = excludeFields;
@@ -46,7 +45,7 @@ class BaseController<T extends Document> {
                 res.json(data);
             }
         } catch (error) {
-            res.status(500).json({ error: error instanceof Error ? error.message : "An unknown error occurred" });
+            res.status(500).json({ error: "An unknown error occurred" });
         }
     }
 
@@ -59,7 +58,7 @@ class BaseController<T extends Document> {
             }
             res.json(data);
         } catch (error) {
-            res.status(500).json({ error: error instanceof Error ? error.message : "An unknown error occurred" });
+            res.status(500).json({ error: "An unknown error occurred" });
         }
     }
 
@@ -71,7 +70,7 @@ class BaseController<T extends Document> {
             const data = await this.model.create(req.body);
             res.status(201).json(data);
         } catch (error) {
-            res.status(500).json({ error: error instanceof Error ? error.message : "An unknown error occurred" });
+            res.status(500).json({ error: "An unknown error occurred" });
         }
     }
 
@@ -91,7 +90,7 @@ class BaseController<T extends Document> {
             );
             res.json(data);
         } catch (error) {
-            res.status(500).json({ error: error instanceof Error ? error.message : "An unknown error occurred" });
+            res.status(500).json({ error: "An unknown error occurred" });
         }
     }
 
@@ -109,7 +108,7 @@ class BaseController<T extends Document> {
             await this.model.findByIdAndDelete(req.params.id);
             res.json(item);
         } catch (error) {
-            res.status(500).json({ error: error instanceof Error ? error.message : "An unknown error occurred" });
+            res.status(500).json({ error: "An unknown error occurred" });
         }
     }
 }
