@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import User from "../models/userModel";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import { OAuth2Client } from "google-auth-library";
 
 const generateTokens = async (userId: string) => {
     const accessToken = jwt.sign(
@@ -15,6 +16,8 @@ const generateTokens = async (userId: string) => {
     );
     return { accessToken, refreshToken };
 };
+
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 const register = async (req: Request, res: Response) => {
     const { email, password, username, imgUrl } = req.body;
@@ -46,6 +49,54 @@ const register = async (req: Request, res: Response) => {
         });
     } catch (error) {
         res.status(500).json({ error: "Registration failed" });
+    }
+};
+
+const googleLogin = async (req: Request, res: Response) => {
+    const { idToken } = req.body as { idToken?: string };
+    if (!idToken) {
+        return res.status(400).json({ error: "Google ID token is required" });
+    }
+    if (!process.env.GOOGLE_CLIENT_ID) {
+        return res.status(500).json({ error: "Google client ID is not configured" });
+    }
+    try {
+        const ticket = await googleClient.verifyIdToken({
+            idToken,
+            audience: process.env.GOOGLE_CLIENT_ID,
+        });
+        const payload = ticket.getPayload();
+        if (!payload || !payload.email) {
+            return res.status(400).json({ error: "Invalid Google token" });
+        }
+
+        const email = payload.email;
+        const username = payload.name || email.split("@")[0];
+        const imgUrl = payload.picture || "";
+
+        let user = await User.findOne({ email });
+        if (!user) {
+            user = await User.create({
+                email,
+                password: "",
+                username,
+                imgUrl,
+            });
+        }
+
+        const tokens = await generateTokens(user._id.toString());
+        user.refreshTokens.push(tokens.refreshToken);
+        await user.save();
+
+        return res.status(200).json({
+            _id: user._id,
+            email: user.email,
+            username: user.username,
+            imgUrl: user.imgUrl,
+            ...tokens,
+        });
+    } catch (error) {
+        return res.status(401).json({ error: "Google authentication failed" });
     }
 };
 
@@ -130,4 +181,4 @@ const refresh = async (req: Request, res: Response) => {
     }
 };
 
-export default { register, login, logout, refresh };
+export default { register, login, logout, refresh, googleLogin };

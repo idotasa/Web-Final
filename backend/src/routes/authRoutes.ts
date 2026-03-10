@@ -61,6 +61,36 @@ router.post("/login", authController.login);
 
 /**
  * @swagger
+ * /auth/google:
+ *   post:
+ *     summary: Login or register a user with Google
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               idToken:
+ *                 type: string
+ *                 description: Google ID token from Google Identity Services
+ *     responses:
+ *       200:
+ *         description: User authenticated with Google successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/AuthResponse'
+ *       400:
+ *         description: Bad request
+ *       401:
+ *         description: Unauthorized
+ */
+router.post("/google", authController.googleLogin);
+
+/**
+ * @swagger
  * /auth/logout:
  *   post:
  *     summary: Logout a user
