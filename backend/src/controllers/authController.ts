@@ -103,6 +103,47 @@ const logout = async (req: Request, res: Response) => {
     }
 };
 
+const googleLogin = async (req: Request, res: Response) => {
+    const { idToken } = req.body as { idToken?: string };
+    if (!idToken) {
+        return res.status(400).json({ error: "Google ID token is required" });
+    }
+    const decoded = (jwt.decode(idToken, { json: true }) as {
+        email?: string;
+        name?: string;
+        picture?: string;
+        sub?: string;
+    }) || {};
+    const email = decoded.email || (decoded.sub ? `${decoded.sub}@google.local` : "");
+    if (!email) {
+        return res.status(400).json({ error: "Invalid Google token" });
+    }
+    const username = decoded.name || email.split("@")[0];
+    const imgUrl = decoded.picture || "";
+
+    let user = await User.findOne({ email });
+    if (!user) {
+        user = await User.create({
+            email,
+            password: "google-auth-user",
+            username,
+            imgUrl,
+        });
+    }
+
+    const tokens = await generateTokens(user._id.toString());
+    user.refreshTokens.push(tokens.refreshToken);
+    await user.save();
+
+    return res.status(200).json({
+        _id: user._id,
+        email: user.email,
+        username: user.username,
+        imgUrl: user.imgUrl,
+        ...tokens,
+    });
+};
+
 const refresh = async (req: Request, res: Response) => {
     const authHeader = req.headers.authorization;
     const refreshToken = authHeader && authHeader.split(" ")[1];
@@ -130,4 +171,4 @@ const refresh = async (req: Request, res: Response) => {
     }
 };
 
-export default { register, login, logout, refresh };
+export default { register, login, logout, refresh, googleLogin };
