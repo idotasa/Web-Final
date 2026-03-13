@@ -14,6 +14,29 @@ export type AuthUser = {
 
 export type AuthResponse = AuthUser & AuthTokens;
 
+export type UserProfile = {
+    _id: string;
+    email: string;
+    username: string;
+    imgUrl: string;
+    followers?: string[];
+    following?: string[];
+};
+
+export type Post = {
+    _id: string;
+    title: string;
+    content?: string;
+    imgUrl?: string;
+    owner: {
+        _id: string;
+        username: string;
+        imgUrl: string;
+    } | string;
+    createdAt: string;
+    updatedAt: string;
+};
+
 export async function googleLoginRequest(idToken: string): Promise<AuthResponse> {
     const res = await fetch(`${API_BASE_URL}/auth/google`, {
         method: "POST",
@@ -95,5 +118,45 @@ export async function logoutRequest(refreshToken: string): Promise<void> {
             Authorization: `Bearer ${refreshToken}`,
         },
     });
+}
+
+export async function getUserProfile(userId: string): Promise<UserProfile> {
+    const res = await fetch(`${API_BASE_URL}/user/${userId}`);
+    if (!res.ok) {
+        throw new Error("Failed to load user profile");
+    }
+    return (await res.json()) as UserProfile;
+}
+
+export async function updateUserProfile(
+    userId: string,
+    data: { username?: string; imgUrl?: string },
+    accessToken: string
+): Promise<UserProfile> {
+    const res = await fetch(`${API_BASE_URL}/user/${userId}`, {
+        method: "PUT",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify(data),
+    });
+
+    if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        const msg = body?.error || "Failed to update profile";
+        throw new Error(msg);
+    }
+
+    return (await res.json()) as UserProfile;
+}
+
+export async function getPostsByOwner(ownerId: string): Promise<Post[]> {
+    const params = new URLSearchParams({ owner: ownerId });
+    const res = await fetch(`${API_BASE_URL}/post?${params.toString()}`);
+    if (!res.ok) {
+        throw new Error("Failed to load user posts");
+    }
+    return (await res.json()) as Post[];
 }
 

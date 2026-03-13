@@ -21,6 +21,7 @@ type AuthContextValue = AuthState & {
     login: (email: string, password: string) => Promise<void>;
     register: (email: string, password: string, username: string, imgUrl?: string) => Promise<void>;
     loginWithGoogle: (idToken: string) => Promise<void>;
+    setUser: (user: AuthUser) => void;
     logout: () => Promise<void>;
 };
 
@@ -134,6 +135,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         login,
         register,
         loginWithGoogle,
+        setUser: (user: AuthUser) =>
+            setState((prev) => {
+                if (!prev.tokens) return prev;
+                const stored: StoredAuth = { user, tokens: prev.tokens };
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(stored));
+                return { ...prev, user };
+            }),
         logout,
     };
 

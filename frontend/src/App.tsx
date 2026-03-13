@@ -1,6 +1,7 @@
 import React from "react";
 import { AuthProvider, useAuth } from "./AuthContext";
 import LoginPage from "./LoginPage";
+import ProfilePage from "./ProfilePage";
 
 const AppContent: React.FC = () => {
     const { user, logout, loading } = useAuth();
@@ -66,7 +67,7 @@ const AppContent: React.FC = () => {
             </header>
 
             <main>
-                <p>Protected content goes here. You are authenticated with JWT.</p>
+                <ProfilePage />
             </main>
         </div>
     );
