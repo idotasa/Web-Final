@@ -94,7 +94,7 @@ export async function logoutRequest(refreshToken: string): Promise<void> {
     });
 }
 
-// User profile (any user by ID - for viewing from feed later)
+// User profile
 export async function getUserProfile(userId: string): Promise<UserProfile> {
     const res = await fetch(`${API_BASE_URL}/user/${userId}`);
     if (!res.ok) throw new Error("Failed to load profile");

@@ -1,7 +1,7 @@
 import React, { FormEvent, useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useAuth } from "./AuthContext";
-import { getUserProfile, getPostsByOwner, updateUserProfile, type Post, type UserProfile } from "./api";
+import { useAuth } from "../context/AuthContext";
+import { getUserProfile, getPostsByOwner, updateUserProfile, type Post, type UserProfile } from "../api";
 
 const ProfilePage: React.FC = () => {
     const { userId } = useParams<"userId">();
@@ -136,7 +136,6 @@ const ProfilePage: React.FC = () => {
 
     return (
         <div style={{ fontFamily: font, color: "#e5e7eb", paddingBottom: 48 }}>
-            {/* Cover / banner - social style */}
             <div
                 style={{
                     height: 200,
@@ -145,16 +144,7 @@ const ProfilePage: React.FC = () => {
                     borderBottom: "1px solid rgba(148,163,184,0.2)",
                 }}
             />
-
-            {/* Profile card: avatar + info + actions */}
-            <div
-                style={{
-                    marginTop: -64,
-                    paddingLeft: 24,
-                    paddingRight: 24,
-                    marginBottom: 24,
-                }}
-            >
+            <div style={{ marginTop: -64, paddingLeft: 24, paddingRight: 24, marginBottom: 24 }}>
                 <div
                     style={{
                         width: 128,
@@ -171,33 +161,22 @@ const ProfilePage: React.FC = () => {
                     }}
                 >
                     {profile.imgUrl ? (
-                        <img
-                            src={profile.imgUrl}
-                            alt=""
-                            style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                        />
+                        <img src={profile.imgUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                     ) : (
                         <span style={{ fontSize: 48, fontWeight: 700, color: "#64748b" }}>
                             {profile.username.charAt(0).toUpperCase()}
                         </span>
                     )}
                 </div>
-
-                <h1 style={{ fontSize: 28, fontWeight: 800, marginTop: 16, marginBottom: 4 }}>
-                    {profile.username}
-                </h1>
+                <h1 style={{ fontSize: 28, fontWeight: 800, marginTop: 16, marginBottom: 4 }}>{profile.username}</h1>
                 {isOwnProfile && (
                     <p style={{ color: "#94a3b8", fontSize: 15, marginBottom: 16 }}>{profile.email}</p>
                 )}
-
-                {/* Stats row - like Twitter/Instagram */}
                 <div style={{ display: "flex", gap: 24, fontSize: 15, marginBottom: 20 }}>
                     <span><strong style={{ color: "#e5e7eb" }}>{posts.length}</strong> posts</span>
                     <span><strong style={{ color: "#e5e7eb" }}>{followersCount}</strong> followers</span>
                     <span><strong style={{ color: "#e5e7eb" }}>{followingCount}</strong> following</span>
                 </div>
-
-                {/* Edit profile button (own profile only) */}
                 {isOwnProfile && (
                     <div style={{ marginBottom: 24 }}>
                         <button
@@ -218,8 +197,6 @@ const ProfilePage: React.FC = () => {
                         </button>
                     </div>
                 )}
-
-                {/* Edit form - only when "Edit profile" was clicked */}
                 {isOwnProfile && showEditForm && (
                     <div
                         style={{
@@ -307,8 +284,6 @@ const ProfilePage: React.FC = () => {
                     </div>
                 )}
             </div>
-
-            {/* Posts section - tab style */}
             <div style={{ borderTop: "1px solid rgba(148,163,184,0.2)", paddingTop: 16 }}>
                 <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 16 }}>
                     {isOwnProfile ? "Your posts" : "Posts"}
@@ -336,28 +311,16 @@ const ProfilePage: React.FC = () => {
                                 }}
                             >
                                 {post.imgUrl && (
-                                    <div
-                                        style={{
-                                            aspectRatio: "1",
-                                            overflow: "hidden",
-                                            background: "#0f172a",
-                                        }}
-                                    >
+                                    <div style={{ aspectRatio: "1", overflow: "hidden", background: "#0f172a" }}>
                                         <img
                                             src={post.imgUrl}
                                             alt=""
-                                            style={{
-                                                width: "100%",
-                                                height: "100%",
-                                                objectFit: "cover",
-                                            }}
+                                            style={{ width: "100%", height: "100%", objectFit: "cover" }}
                                         />
                                     </div>
                                 )}
                                 <div style={{ padding: 14 }}>
-                                    <h4 style={{ fontSize: 16, fontWeight: 700, marginBottom: 6 }}>
-                                        {post.title}
-                                    </h4>
+                                    <h4 style={{ fontSize: 16, fontWeight: 700, marginBottom: 6 }}>{post.title}</h4>
                                     {post.content && (
                                         <p
                                             style={{

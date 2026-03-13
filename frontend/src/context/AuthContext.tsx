@@ -8,7 +8,7 @@ import {
     googleLoginRequest,
     refreshTokens,
     logoutRequest,
-} from "./api";
+} from "../api";
 
 type AuthState = {
     user: AuthUser | null;

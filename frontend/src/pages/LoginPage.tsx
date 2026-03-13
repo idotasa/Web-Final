@@ -1,9 +1,16 @@
 import React, { FormEvent, useEffect, useRef, useState } from "react";
-import { useAuth } from "./AuthContext";
+import { useAuth } from "../context/AuthContext";
 
 declare global {
     interface Window {
-        google?: { accounts: { id: { initialize: (c: unknown) => void; renderButton: (el: HTMLElement, o: unknown) => void } } };
+        google?: {
+            accounts: {
+                id: {
+                    initialize: (c: unknown) => void;
+                    renderButton: (el: HTMLElement, o: unknown) => void;
+                };
+            };
+        };
     }
 }
 
