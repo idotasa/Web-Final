@@ -1,6 +1,7 @@
 import dotenv from "dotenv";
 dotenv.config();
 import express, { Express } from "express";
+import cors from "cors";
 import mongoose from "mongoose";
 import authRoutes from "./routes/authRoutes";
 import postRoutes from "./routes/postRoutes";
@@ -20,6 +21,7 @@ const initApp = (): Promise<Express> => {
             .connect(dbUri)
             .then(() => {
                 const app = express();
+                app.use(cors({ origin: "http://localhost:5173" }));
                 app.use(express.json());
 
                 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));
