@@ -1,5 +1,3 @@
-import dotenv from "dotenv";
-dotenv.config();
 import express, { Express } from "express";
 import cors from "cors";
 import path from "path";
@@ -10,20 +8,18 @@ import commentRoutes from "./routes/commentRoutes";
 import userRoutes from "./routes/userRoutes";
 import { specs, swaggerUi } from "./swagger";
 import upload from "./middleware/uploadMiddleware";
+import config from "./config";
+import { errorHandler } from "./middleware/errorHandler";
 
 const initApp = (): Promise<Express> => {
     return new Promise<Express>((resolve, reject) => {
-        const dbUri = process.env.MONGODB_URI;
-        if (!dbUri) {
-            reject(new Error("MONGODB_URI is not defined in environment variables"));
-            return;
-        }
+        const dbUri = config.DB_URL;
 
         mongoose
             .connect(dbUri)
             .then(() => {
                 const app = express();
-                app.use(cors({ origin: "http://localhost:5173" }));
+                app.use(cors({ origin: config.CORS_ORIGIN }));
                 app.use(express.json());
 
                 // Serve uploaded files from the public/ directory
@@ -35,8 +31,7 @@ const initApp = (): Promise<Express> => {
                         res.status(400).json({ error: "No file uploaded" });
                         return;
                     }
-                    const domainBase = process.env.DOMAIN_BASE || `http://localhost:${process.env.PORT || 3000}`;
-                    const url = `${domainBase}/${req.file.filename}`;
+                    const url = `${config.DOMAIN_BASE}/uploads/${req.file.filename}`;
                     res.json({ url });
                 });
 
@@ -46,6 +41,9 @@ const initApp = (): Promise<Express> => {
                 app.use("/post", postRoutes);
                 app.use("/comment", commentRoutes);
                 app.use("/user", userRoutes);
+
+                // Global error handler (should be last)
+                app.use(errorHandler);
 
                 resolve(app);
             })

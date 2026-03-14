@@ -45,16 +45,6 @@ afterEach(() => {
   jest.restoreAllMocks();
 });
 
-describe("app.ts – initApp edge cases", () => {
-  test("rejects when MONGODB_URI env var is missing", async () => {
-    const original = process.env.MONGODB_URI;
-    delete process.env.MONGODB_URI;
-    const initAppFresh = (await import("../app")).default;
-    await expect(initAppFresh()).rejects.toThrow("MONGODB_URI is not defined");
-    process.env.MONGODB_URI = original;
-  });
-});
-
 describe("Auth API", () => {
   test("register new user", async () => {
     const res = await request(app).post("/auth/register").send(user);

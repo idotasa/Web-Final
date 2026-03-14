@@ -39,6 +39,7 @@ const ProfilePage: React.FC = () => {
     const postImgInputRef = useRef<HTMLInputElement>(null);
     const [savingPost, setSavingPost] = useState(false);
     const [deletingPostId, setDeletingPostId] = useState<string | null>(null);
+    
 
     const profileId = userId === "me" || !userId ? currentUser?._id : userId;
     const isOwnProfile = !!currentUser && profileId === currentUser._id;
@@ -82,6 +83,17 @@ const ProfilePage: React.FC = () => {
         setAvatarPreview(file ? URL.createObjectURL(file) : null);
     };
 
+    const cancelEdit = () => {
+        setEditUsername(profile?.username || "");
+        setAvatarFile(null);
+        if (avatarPreview) {
+            URL.revokeObjectURL(avatarPreview);
+            setAvatarPreview(null);
+        }
+        if (avatarInputRef.current) avatarInputRef.current.value = "";
+        setShowEditForm(false);
+    };
+
     // ── Save profile ─────────────────────────────────────────────────────────
     const handleSave = async (e: FormEvent) => {
         e.preventDefault();
@@ -100,17 +112,19 @@ const ProfilePage: React.FC = () => {
                 { username: editUsername, imgUrl },
                 tokens.accessToken
             );
-            setProfile(updated);
-            setUser({
-                _id: updated._id,
-                email: updated.email,
-                username: updated.username,
-                imgUrl: updated.imgUrl,
-            });
-            setAvatarFile(null);
-            setAvatarPreview(null);
-            if (avatarInputRef.current) avatarInputRef.current.value = "";
-            setShowEditForm(false);
+            if (updated) {
+                setProfile(updated);
+                setUser({
+                    _id: updated._id,
+                    email: updated.email,
+                    username: updated.username,
+                    imgUrl: updated.imgUrl,
+                });
+                setAvatarFile(null);
+                setAvatarPreview(null);
+                if (avatarInputRef.current) avatarInputRef.current.value = "";
+                setShowEditForm(false);
+            }
         } catch (e) {
             setError(e instanceof Error ? e.message : "Failed to save");
         } finally {
@@ -231,10 +245,9 @@ const ProfilePage: React.FC = () => {
     const followingCount = profile.following?.length ?? 0;
     const font = "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
 
-    // The avatar to show in the header uses the local preview (if a new file has been selected)
-    // or falls back to the saved profile photo.
-    const displayedAvatar = avatarPreview ?? profile.imgUrl;
-
+    // The main large avatar photo in the header ALWAYS shows the official saved photo from the backend.
+    // It only updates once the backend returns a successful 200 response and we call setProfile.
+    const displayedAvatar = profile.imgUrl;
     return (
         <div style={{ fontFamily: font, color: "#e5e7eb", paddingBottom: 48 }}>
             <div
@@ -283,7 +296,7 @@ const ProfilePage: React.FC = () => {
                     <div style={{ marginBottom: 24 }}>
                         <button
                             type="button"
-                            onClick={() => setShowEditForm((v) => !v)}
+                            onClick={showEditForm ? cancelEdit : () => setShowEditForm(true)}
                             style={{
                                 padding: "10px 24px",
                                 borderRadius: 9999,
@@ -333,7 +346,6 @@ const ProfilePage: React.FC = () => {
                                     }}
                                 />
                             </label>
-
                             {/* Profile photo file picker */}
                             <label style={{ fontSize: 14, color: "#94a3b8" }}>
                                 Profile photo

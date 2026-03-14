@@ -2,16 +2,17 @@ import { Request, Response } from "express";
 import User from "../models/userModel";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import config from "../config";
 
 const generateTokens = async (userId: string) => {
     const accessToken = jwt.sign(
         { _id: userId },
-        process.env.JWT_SECRET as string,
-        { expiresIn: process.env.JWT_EXPIRATION } as jwt.SignOptions
+        config.ACCESS_TOKEN_SECRET,
+        { expiresIn: "3h" } as jwt.SignOptions
     );
     const refreshToken = jwt.sign(
         { _id: userId, nonce: Math.random().toString(36) },
-        process.env.JWT_REFRESH_SECRET as string
+        config.REFRESH_TOKEN_SECRET
     );
     return { accessToken, refreshToken };
 };
@@ -65,8 +66,8 @@ const googleLogin = async (req: Request, res: Response) => {
     if (!email) {
         return res.status(400).json({ error: "Invalid Google token" });
     }
-    const username = decoded.name || email.split("@")[0];
-    const imgUrl = decoded.picture || "";
+    const username = decoded.name ?? email.split("@")[0];
+    const imgUrl = decoded.picture ?? "";
 
     let user = await User.findOne({ email });
     if (!user) {
@@ -129,7 +130,7 @@ const logout = async (req: Request, res: Response) => {
         return res.status(401).json({ error: "Refresh token required" });
     }
     try {
-        const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET as string) as { _id: string };
+        const decoded = jwt.verify(refreshToken, config.REFRESH_TOKEN_SECRET) as { _id: string };
         const user = await User.findById(decoded._id);
         if (!user) {
             return res.status(401).json({ error: "Invalid token" });
@@ -154,7 +155,7 @@ const refresh = async (req: Request, res: Response) => {
         return res.status(401).json({ error: "Refresh token required" });
     }
     try {
-        const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET as string) as { _id: string };
+        const decoded = jwt.verify(refreshToken, config.REFRESH_TOKEN_SECRET) as { _id: string };
         const user = await User.findById(decoded._id);
         if (!user) {
             return res.status(401).json({ error: "Invalid token" });

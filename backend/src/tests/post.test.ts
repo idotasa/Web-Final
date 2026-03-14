@@ -168,6 +168,11 @@ describe("Post API", () => {
   });
 
   test("feed returns followed user posts", async () => {
+    // Like the post as follower to trigger coverage for isLiked logic
+    await request(app)
+      .put(`/post/${postId}/like`)
+      .set(authHeader(follower.accessToken));
+
     const res = await request(app)
       .get("/post/feed")
       .set(authHeader(follower.accessToken));
@@ -175,6 +180,7 @@ describe("Post API", () => {
     expect(res.body.data).toBeDefined();
     const ids = res.body.data.map((p: any) => p._id);
     expect(ids).toContain(postId);
+    expect(res.body.data[0].isLiked).toBe(true);
   });
 
   test("delete post as other user is forbidden", async () => {

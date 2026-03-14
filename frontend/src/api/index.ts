@@ -303,6 +303,16 @@ export async function addComment(
     return (await res.json()) as Comment;
 }
 
+export async function deleteComment(accessToken: string, commentId: string): Promise<void> {
+    const res = await fetch(`${API_BASE_URL}/comment/${commentId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error((data && data.error) || "Failed to delete comment");
+    }
+}
 // File upload
 export async function uploadFile(file: File, accessToken?: string): Promise<string> {
     const formData = new FormData();

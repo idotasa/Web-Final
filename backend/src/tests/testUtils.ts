@@ -4,10 +4,10 @@ import request from "supertest";
 import mongoose from "mongoose";
 import jwt from "jsonwebtoken";
 import User from "../models/userModel";
+import config from "../config";
 import { TEST_JWT_SECRET } from "./tests_conf";
 
-// Ensure tests use a predictable secret and not the one from .env
-process.env.JWT_SECRET = TEST_JWT_SECRET;
+// Secrets are handled by config utility in test mode
 
 
 export interface TestUser {
@@ -67,6 +67,6 @@ export const closeMongooseConnection = async () => {
 };
 
 export const signToken = (payload: object) => {
-  return jwt.sign(payload, TEST_JWT_SECRET);
+  return jwt.sign(payload, config.ACCESS_TOKEN_SECRET);
 };
 
