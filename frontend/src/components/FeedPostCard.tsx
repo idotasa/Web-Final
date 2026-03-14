@@ -21,16 +21,10 @@ function formatDate(createdAt: string): string {
 type FeedPostCardProps = {
     post: FeedPost & { isLiked?: boolean };
     accessToken: string;
-    currentUserId: string;
     onLikeUpdate: (postId: string, likes: number, isLiked: boolean) => void;
 };
 
-const FeedPostCard: React.FC<FeedPostCardProps> = ({
-    post,
-    accessToken,
-    currentUserId,
-    onLikeUpdate,
-}) => {
+const FeedPostCard: React.FC<FeedPostCardProps> = ({ post, accessToken, onLikeUpdate }) => {
     const [liking, setLiking] = useState(false);
     const owner = typeof post.owner === "string" ? null : post.owner;
     const ownerId = owner?._id ?? (typeof post.owner === "string" ? post.owner : "");
