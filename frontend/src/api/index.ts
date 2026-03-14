@@ -33,6 +33,26 @@ export type Post = {
     updatedAt: string;
 };
 
+/** Feed item: post with populated owner and counts */
+export type FeedPost = Post & {
+    likesCount?: number;
+    commentsCount?: number;
+};
+
+export type FeedResponse = {
+    data: FeedPost[];
+    page: number;
+    hasMore: boolean;
+};
+
+export type Comment = {
+    _id: string;
+    content: string;
+    postId: string;
+    owner: string | { _id: string; username: string; imgUrl?: string };
+    createdAt: string;
+};
+
 // Auth
 export async function loginRequest(email: string, password: string): Promise<AuthResponse> {
     const res = await fetch(`${API_BASE_URL}/auth/login`, {
@@ -126,4 +146,75 @@ export async function getPostsByOwner(ownerId: string): Promise<Post[]> {
     const res = await fetch(`${API_BASE_URL}/post?${params.toString()}`);
     if (!res.ok) throw new Error("Failed to load posts");
     return (await res.json()) as Post[];
+}
+
+// Feed (auth required)
+export async function getFeed(accessToken: string, page = 1, limit = 10): Promise<FeedResponse> {
+    const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+    const res = await fetch(`${API_BASE_URL}/post/feed?${params.toString()}`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error((data && data.error) || "Failed to load feed");
+    }
+    return (await res.json()) as FeedResponse;
+}
+
+export async function createPost(
+    accessToken: string,
+    body: { title: string; content?: string; imgUrl?: string }
+): Promise<Post> {
+    const res = await fetch(`${API_BASE_URL}/post`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify(body),
+    });
+    if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error((data && data.error) || "Failed to create post");
+    }
+    return (await res.json()) as Post;
+}
+
+export async function likePost(accessToken: string, postId: string): Promise<{ likes: number; isLiked: boolean }> {
+    const res = await fetch(`${API_BASE_URL}/post/${postId}/like`, {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error((data && data.error) || "Failed to like post");
+    }
+    return (await res.json()) as { likes: number; isLiked: boolean };
+}
+
+// Comments
+export async function getComments(postId: string): Promise<Comment[]> {
+    const res = await fetch(`${API_BASE_URL}/comment?postId=${postId}`);
+    if (!res.ok) throw new Error("Failed to load comments");
+    return (await res.json()) as Comment[];
+}
+
+export async function addComment(
+    accessToken: string,
+    postId: string,
+    content: string
+): Promise<Comment> {
+    const res = await fetch(`${API_BASE_URL}/comment`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({ postId, content }),
+    });
+    if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error((data && data.error) || "Failed to add comment");
+    }
+    return (await res.json()) as Comment;
 }
