@@ -171,9 +171,16 @@ const FeedPostCard: React.FC<FeedPostCardProps> = ({ post, accessToken, onLikeUp
                     <span style={{ fontSize: 20 }}>{isLiked ? "❤️" : "🤍"}</span>
                     <span>{likes}</span>
                 </button>
-                <span style={{ fontSize: 14, color: "#94a3b8" }}>
+                <Link
+                    to={`/post/${post._id}`}
+                    style={{
+                        fontSize: 14,
+                        color: "#94a3b8",
+                        textDecoration: "none",
+                    }}
+                >
                     {commentsCount} {commentsCount === 1 ? "comment" : "comments"}
-                </span>
+                </Link>
             </footer>
         </article>
     );

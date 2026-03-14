@@ -1,19 +1,37 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { getFollowing, searchUsers, type UserSummary } from "../api";
+import { getFollowing, searchUsers, toggleFollow, type UserSummary } from "../api";
 
 const font = "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
 
 type SidebarProps = {
     currentUserId: string;
+    accessToken: string;
 };
 
-const Sidebar: React.FC<SidebarProps> = ({ currentUserId }) => {
+const Sidebar: React.FC<SidebarProps> = ({ currentUserId, accessToken }) => {
     const [following, setFollowing] = useState<UserSummary[]>([]);
     const [searchQuery, setSearchQuery] = useState("");
     const [searchResults, setSearchResults] = useState<UserSummary[]>([]);
     const [searching, setSearching] = useState(false);
     const [loadingFollowing, setLoadingFollowing] = useState(true);
+    const [followLoadingId, setFollowLoadingId] = useState<string | null>(null);
+
+    const followingIds = new Set(following.map((u) => u._id));
+
+    const handleToggleFollow = async (userId: string) => {
+        if (followLoadingId) return;
+        setFollowLoadingId(userId);
+        try {
+            await toggleFollow(accessToken, userId);
+            const list = await getFollowing(currentUserId);
+            setFollowing(list);
+        } catch {
+            // keep state as is
+        } finally {
+            setFollowLoadingId(null);
+        }
+    };
 
     useEffect(() => {
         let cancelled = false;
@@ -165,43 +183,80 @@ const Sidebar: React.FC<SidebarProps> = ({ currentUserId }) => {
                             <div style={{ padding: 8, color: "#94a3b8", fontSize: 13 }}>No users found</div>
                         )}
                         {!searching &&
-                            searchResults.slice(0, 8).map((u) => (
-                                <Link
-                                    key={u._id}
-                                    to={`/profile/${u._id}`}
-                                    style={{
-                                        display: "flex",
-                                        alignItems: "center",
-                                        gap: 10,
-                                        padding: "8px 0",
-                                        textDecoration: "none",
-                                        color: "#e5e7eb",
-                                    }}
-                                >
+                            searchResults.slice(0, 8).map((u) => {
+                                const isFollowing = followingIds.has(u._id);
+                                const loading = followLoadingId === u._id;
+                                return (
                                     <div
+                                        key={u._id}
                                         style={{
-                                            width: 32,
-                                            height: 32,
-                                            borderRadius: "50%",
-                                            overflow: "hidden",
-                                            background: "#1e293b",
-                                            flexShrink: 0,
                                             display: "flex",
                                             alignItems: "center",
-                                            justifyContent: "center",
+                                            gap: 10,
+                                            padding: "8px 0",
+                                            justifyContent: "space-between",
                                         }}
                                     >
-                                        {u.imgUrl ? (
-                                            <img src={u.imgUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                                        ) : (
-                                            <span style={{ fontSize: 12, fontWeight: 700, color: "#64748b" }}>
-                                                {(u.username || "?").charAt(0).toUpperCase()}
-                                            </span>
-                                        )}
+                                        <Link
+                                            to={`/profile/${u._id}`}
+                                            style={{
+                                                display: "flex",
+                                                alignItems: "center",
+                                                gap: 10,
+                                                flex: 1,
+                                                minWidth: 0,
+                                                textDecoration: "none",
+                                                color: "#e5e7eb",
+                                            }}
+                                        >
+                                            <div
+                                                style={{
+                                                    width: 32,
+                                                    height: 32,
+                                                    borderRadius: "50%",
+                                                    overflow: "hidden",
+                                                    background: "#1e293b",
+                                                    flexShrink: 0,
+                                                    display: "flex",
+                                                    alignItems: "center",
+                                                    justifyContent: "center",
+                                                }}
+                                            >
+                                                {u.imgUrl ? (
+                                                    <img src={u.imgUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                                                ) : (
+                                                    <span style={{ fontSize: 12, fontWeight: 700, color: "#64748b" }}>
+                                                        {(u.username || "?").charAt(0).toUpperCase()}
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <span style={{ fontWeight: 500, fontSize: 14 }}>{u.username}</span>
+                                        </Link>
+                                        <button
+                                            type="button"
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                handleToggleFollow(u._id);
+                                            }}
+                                            disabled={loading}
+                                            style={{
+                                                flexShrink: 0,
+                                                padding: "6px 12px",
+                                                borderRadius: 9999,
+                                                border: "none",
+                                                background: isFollowing ? "rgba(148,163,184,0.3)" : "linear-gradient(135deg, #0ea5e9, #6366f1)",
+                                                color: "#e5e7eb",
+                                                fontSize: 12,
+                                                fontWeight: 600,
+                                                cursor: loading ? "wait" : "pointer",
+                                                opacity: loading ? 0.7 : 1,
+                                            }}
+                                        >
+                                            {loading ? "..." : isFollowing ? "Unfollow" : "Follow"}
+                                        </button>
                                     </div>
-                                    <span style={{ fontWeight: 500, fontSize: 14 }}>{u.username}</span>
-                                </Link>
-                            ))}
+                                );
+                            })}
                     </div>
                 </div>
             </div>

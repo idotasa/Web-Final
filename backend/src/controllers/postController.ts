@@ -11,6 +11,24 @@ class PostController extends BaseController<IPost> {
         super(Post, "owner", null);
     }
 
+    async getById(req: AuthRequest, res: Response): Promise<void> {
+        try {
+            const post = await Post.findById(req.params.id).lean();
+            if (!post) {
+                res.status(404).json({ error: "Not found" });
+                return;
+            }
+            const payload: Record<string, unknown> = { ...post };
+            if (req.user) {
+                payload.isLiked =
+                    (post.likes as unknown[] | undefined)?.some((id) => String(id) === req.user!._id) ?? false;
+            }
+            res.json(payload);
+        } catch (error) {
+            res.status(500).json({ error: "An unknown error occurred" });
+        }
+    }
+
     async feed(req: AuthRequest, res: Response): Promise<void> {
         try {
             const pag = this.parsePagination(req);
@@ -19,8 +37,9 @@ class PostController extends BaseController<IPost> {
                 res.status(404).json({ error: "User not found" });
                 return;
             }
+            const ownerIds = [...(user.following || []).map((id: unknown) => id), req.user!._id];
 
-            const posts = await Post.find({ owner: { $in: user.following } })
+            const posts = await Post.find({ owner: { $in: ownerIds } })
                 .sort({ createdAt: -1 })
                 .skip(pag.skip)
                 .limit(pag.limit + 1)
@@ -30,11 +49,13 @@ class PostController extends BaseController<IPost> {
             const hasMore = posts.length > pag.limit;
             if (hasMore) posts.pop();
 
+            const currentUserId = req.user!._id;
             const data = await Promise.all(
                 posts.map(async (post) => ({
                     ...post,
                     likesCount: post.likes?.length || 0,
                     commentsCount: await Comment.countDocuments({ postId: post._id }),
+                    isLiked: post.likes?.some((id) => String(id) === currentUserId) ?? false,
                 }))
             );
 

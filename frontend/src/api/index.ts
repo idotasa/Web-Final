@@ -43,6 +43,7 @@ export type Post = {
 export type FeedPost = Post & {
     likesCount?: number;
     commentsCount?: number;
+    isLiked?: boolean;
 };
 
 export type FeedResponse = {
@@ -229,6 +230,50 @@ export async function likePost(accessToken: string, postId: string): Promise<{ l
         throw new Error((data && data.error) || "Failed to like post");
     }
     return (await res.json()) as { likes: number; isLiked: boolean };
+}
+
+export type PostWithLike = Post & { isLiked?: boolean; likes?: string[] };
+
+export async function getPostById(postId: string, accessToken?: string): Promise<PostWithLike> {
+    const headers: HeadersInit = {};
+    if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
+    const res = await fetch(`${API_BASE_URL}/post/${postId}`, { headers });
+    if (!res.ok) {
+        if (res.status === 404) throw new Error("Post not found");
+        throw new Error("Failed to load post");
+    }
+    return (await res.json()) as PostWithLike;
+}
+
+export async function updatePost(
+    accessToken: string,
+    postId: string,
+    body: { title?: string; content?: string; imgUrl?: string }
+): Promise<Post> {
+    const res = await fetch(`${API_BASE_URL}/post/${postId}`, {
+        method: "PUT",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify(body),
+    });
+    if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error((data && data.error) || "Failed to update post");
+    }
+    return (await res.json()) as Post;
+}
+
+export async function deletePost(accessToken: string, postId: string): Promise<void> {
+    const res = await fetch(`${API_BASE_URL}/post/${postId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error((data && data.error) || "Failed to delete post");
+    }
 }
 
 // Comments
