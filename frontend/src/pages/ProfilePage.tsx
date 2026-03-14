@@ -1,7 +1,15 @@
 import React, { FormEvent, useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { Link, useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { getUserProfile, getPostsByOwner, updateUserProfile, type Post, type UserProfile } from "../api";
+import {
+    getUserProfile,
+    getPostsByOwner,
+    updateUserProfile,
+    updatePost,
+    deletePost,
+    type Post,
+    type UserProfile,
+} from "../api";
 
 const ProfilePage: React.FC = () => {
     const { userId } = useParams<"userId">();
@@ -15,6 +23,12 @@ const ProfilePage: React.FC = () => {
     const [editUsername, setEditUsername] = useState("");
     const [editImgUrl, setEditImgUrl] = useState("");
     const [showEditForm, setShowEditForm] = useState(false);
+    const [editingPostId, setEditingPostId] = useState<string | null>(null);
+    const [editPostTitle, setEditPostTitle] = useState("");
+    const [editPostContent, setEditPostContent] = useState("");
+    const [editPostImgUrl, setEditPostImgUrl] = useState("");
+    const [savingPost, setSavingPost] = useState(false);
+    const [deletingPostId, setDeletingPostId] = useState<string | null>(null);
 
     const profileId = userId === "me" || !userId ? currentUser?._id : userId;
     const isOwnProfile = !!currentUser && profileId === currentUser._id;
@@ -73,6 +87,47 @@ const ProfilePage: React.FC = () => {
             setError(e instanceof Error ? e.message : "Failed to save");
         } finally {
             setSaving(false);
+        }
+    };
+
+    const startEditPost = (p: Post) => {
+        setEditingPostId(p._id);
+        setEditPostTitle(p.title);
+        setEditPostContent(p.content || "");
+        setEditPostImgUrl(p.imgUrl || "");
+    };
+
+    const handleSavePost = async (e: FormEvent) => {
+        e.preventDefault();
+        if (!tokens?.accessToken || !editingPostId) return;
+        setSavingPost(true);
+        setError(null);
+        try {
+            const updated = await updatePost(tokens.accessToken, editingPostId, {
+                title: editPostTitle.trim(),
+                content: editPostContent.trim() || undefined,
+                imgUrl: editPostImgUrl.trim() || undefined,
+            });
+            setPosts((prev) => prev.map((p) => (p._id === updated._id ? updated : p)));
+            setEditingPostId(null);
+        } catch (e) {
+            setError(e instanceof Error ? e.message : "Failed to update post");
+        } finally {
+            setSavingPost(false);
+        }
+    };
+
+    const handleDeletePost = async (postId: string) => {
+        if (!tokens?.accessToken || !window.confirm("Delete this post?")) return;
+        setDeletingPostId(postId);
+        setError(null);
+        try {
+            await deletePost(tokens.accessToken, postId);
+            setPosts((prev) => prev.filter((p) => p._id !== postId));
+        } catch (e) {
+            setError(e instanceof Error ? e.message : "Failed to delete post");
+        } finally {
+            setDeletingPostId(null);
         }
     };
 
@@ -308,39 +363,178 @@ const ProfilePage: React.FC = () => {
                                     borderRadius: 16,
                                     overflow: "hidden",
                                     border: "1px solid rgba(148,163,184,0.2)",
+                                    position: "relative",
                                 }}
                             >
-                                {post.imgUrl && (
-                                    <div style={{ aspectRatio: "1", overflow: "hidden", background: "#0f172a" }}>
-                                        <img
-                                            src={post.imgUrl}
-                                            alt=""
-                                            style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                                        />
+                                {editingPostId === post._id ? (
+                                    <div
+                                        style={{ padding: 14 }}
+                                        onClick={(e) => e.stopPropagation()}
+                                        role="presentation"
+                                    >
+                                        <form onSubmit={handleSavePost} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                                            <input
+                                                value={editPostTitle}
+                                                onChange={(e) => setEditPostTitle(e.target.value)}
+                                                required
+                                                placeholder="Title"
+                                                style={{
+                                                    padding: "8px 10px",
+                                                    borderRadius: 8,
+                                                    border: "1px solid rgba(148,163,184,0.4)",
+                                                    background: "#0f172a",
+                                                    color: "#e5e7eb",
+                                                    fontSize: 14,
+                                                }}
+                                            />
+                                            <textarea
+                                                value={editPostContent}
+                                                onChange={(e) => setEditPostContent(e.target.value)}
+                                                placeholder="Content (optional)"
+                                                rows={2}
+                                                style={{
+                                                    padding: "8px 10px",
+                                                    borderRadius: 8,
+                                                    border: "1px solid rgba(148,163,184,0.4)",
+                                                    background: "#0f172a",
+                                                    color: "#e5e7eb",
+                                                    fontSize: 14,
+                                                    resize: "vertical",
+                                                }}
+                                            />
+                                            <input
+                                                value={editPostImgUrl}
+                                                onChange={(e) => setEditPostImgUrl(e.target.value)}
+                                                placeholder="Image URL (optional)"
+                                                type="url"
+                                                style={{
+                                                    padding: "8px 10px",
+                                                    borderRadius: 8,
+                                                    border: "1px solid rgba(148,163,184,0.4)",
+                                                    background: "#0f172a",
+                                                    color: "#e5e7eb",
+                                                    fontSize: 14,
+                                                }}
+                                            />
+                                            <div style={{ display: "flex", gap: 8 }}>
+                                                <button
+                                                    type="submit"
+                                                    disabled={savingPost}
+                                                    style={{
+                                                        padding: "6px 14px",
+                                                        borderRadius: 8,
+                                                        border: "none",
+                                                        background: "linear-gradient(135deg, #0ea5e9, #6366f1)",
+                                                        color: "white",
+                                                        fontWeight: 600,
+                                                        fontSize: 13,
+                                                        cursor: savingPost ? "wait" : "pointer",
+                                                    }}
+                                                >
+                                                    {savingPost ? "Saving..." : "Save"}
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setEditingPostId(null)}
+                                                    style={{
+                                                        padding: "6px 14px",
+                                                        borderRadius: 8,
+                                                        border: "1px solid rgba(148,163,184,0.5)",
+                                                        background: "transparent",
+                                                        color: "#e5e7eb",
+                                                        fontSize: 13,
+                                                        cursor: "pointer",
+                                                    }}
+                                                >
+                                                    Cancel
+                                                </button>
+                                            </div>
+                                        </form>
                                     </div>
-                                )}
-                                <div style={{ padding: 14 }}>
-                                    <h4 style={{ fontSize: 16, fontWeight: 700, marginBottom: 6 }}>{post.title}</h4>
-                                    {post.content && (
-                                        <p
-                                            style={{
-                                                fontSize: 14,
-                                                color: "#94a3b8",
-                                                marginBottom: 8,
-                                                maxHeight: 60,
-                                                overflow: "hidden",
-                                                display: "-webkit-box",
-                                                WebkitLineClamp: 2,
-                                                WebkitBoxOrient: "vertical",
-                                            }}
+                                ) : (
+                                    <>
+                                        <Link
+                                            to={`/post/${post._id}`}
+                                            style={{ textDecoration: "none", color: "inherit", display: "block" }}
                                         >
-                                            {post.content}
-                                        </p>
-                                    )}
-                                    <p style={{ fontSize: 12, color: "#64748b" }}>
-                                        {new Date(post.createdAt).toLocaleDateString()}
-                                    </p>
-                                </div>
+                                            {post.imgUrl && (
+                                                <div style={{ aspectRatio: "1", overflow: "hidden", background: "#0f172a" }}>
+                                                    <img
+                                                        src={post.imgUrl}
+                                                        alt=""
+                                                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                                                    />
+                                                </div>
+                                            )}
+                                            <div style={{ padding: 14 }}>
+                                                <h4 style={{ fontSize: 16, fontWeight: 700, marginBottom: 6 }}>{post.title}</h4>
+                                                {post.content && (
+                                                    <p
+                                                        style={{
+                                                            fontSize: 14,
+                                                            color: "#94a3b8",
+                                                            marginBottom: 8,
+                                                            maxHeight: 60,
+                                                            overflow: "hidden",
+                                                            display: "-webkit-box",
+                                                            WebkitLineClamp: 2,
+                                                            WebkitBoxOrient: "vertical",
+                                                        }}
+                                                    >
+                                                        {post.content}
+                                                    </p>
+                                                )}
+                                                <p style={{ fontSize: 12, color: "#64748b" }}>
+                                                    {new Date(post.createdAt).toLocaleDateString()}
+                                                </p>
+                                            </div>
+                                        </Link>
+                                        {isOwnProfile && (
+                                            <div
+                                                style={{
+                                                    padding: "8px 14px",
+                                                    borderTop: "1px solid rgba(148,163,184,0.2)",
+                                                    display: "flex",
+                                                    gap: 12,
+                                                }}
+                                                onClick={(e) => e.preventDefault()}
+                                                role="presentation"
+                                            >
+                                                <button
+                                                    type="button"
+                                                    onClick={() => startEditPost(post)}
+                                                    style={{
+                                                        padding: "4px 10px",
+                                                        borderRadius: 6,
+                                                        border: "1px solid rgba(148,163,184,0.4)",
+                                                        background: "transparent",
+                                                        color: "#94a3b8",
+                                                        fontSize: 12,
+                                                        cursor: "pointer",
+                                                    }}
+                                                >
+                                                    Edit
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleDeletePost(post._id)}
+                                                    disabled={deletingPostId === post._id}
+                                                    style={{
+                                                        padding: "4px 10px",
+                                                        borderRadius: 6,
+                                                        border: "1px solid rgba(239,68,68,0.5)",
+                                                        background: "transparent",
+                                                        color: "#f87171",
+                                                        fontSize: 12,
+                                                        cursor: deletingPostId === post._id ? "wait" : "pointer",
+                                                    }}
+                                                >
+                                                    {deletingPostId === post._id ? "Deleting..." : "Delete"}
+                                                </button>
+                                            </div>
+                                        )}
+                                    </>
+                                )}
                             </article>
                         ))}
                     </div>

@@ -1,10 +1,13 @@
 import React from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import Sidebar from "./Sidebar";
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const { user, logout } = useAuth();
+    const { user, tokens, logout } = useAuth();
     const navigate = useNavigate();
+    const location = useLocation();
+    const isProfilePage = location.pathname.startsWith("/profile");
 
     if (!user) {
         return <>{children}</>;
@@ -73,9 +76,21 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                     </button>
                 </nav>
             </header>
-            <main style={{ padding: "24px 24px 48px", maxWidth: 900, margin: "0 auto" }}>
-                {children}
-            </main>
+            <div
+                style={{
+                    display: "flex",
+                    gap: isProfilePage ? 48 : 24,
+                    padding: "24px 24px 48px",
+                    maxWidth: isProfilePage ? 1200 : 900,
+                    margin: "0 auto",
+                    alignItems: "flex-start",
+                }}
+            >
+                <main style={{ flex: 1, minWidth: 0, maxWidth: isProfilePage ? 900 : 640, paddingRight: isProfilePage ? 16 : 0 }}>
+                    {children}
+                </main>
+                {isProfilePage && tokens?.accessToken && <Sidebar currentUserId={user._id} accessToken={tokens.accessToken} />}
+            </div>
         </div>
     );
 };

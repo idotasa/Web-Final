@@ -3,6 +3,7 @@ import { AuthProvider } from "./context/AuthContext";
 import Layout from "./components/Layout";
 import HomePage from "./pages/HomePage";
 import ProfilePage from "./pages/ProfilePage";
+import PostPage from "./pages/PostPage";
 
 function App() {
     return (
@@ -11,6 +12,7 @@ function App() {
                 <Layout>
                     <Routes>
                         <Route path="/" element={<HomePage />} />
+                        <Route path="/post/:postId" element={<PostPage />} />
                         <Route path="/profile" element={<Navigate to="/profile/me" replace />} />
                         <Route path="/profile/me" element={<ProfilePage />} />
                         <Route path="/profile/:userId" element={<ProfilePage />} />

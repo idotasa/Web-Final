@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useRef, useState } from "react";
 import {
     AuthResponse,
     AuthTokens,
@@ -37,8 +37,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         loading: true,
         error: null,
     });
+    const restoreAttempted = useRef(false);
 
     useEffect(() => {
+        if (restoreAttempted.current) return;
+        restoreAttempted.current = true;
+
         const stored = localStorage.getItem(STORAGE_KEY);
         if (!stored) {
             setState((p) => ({ ...p, loading: false }));
