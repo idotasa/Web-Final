@@ -1,4 +1,4 @@
-import React, { FormEvent, useEffect, useState } from "react";
+import React, { FormEvent, useEffect, useRef, useState } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import {
@@ -7,6 +7,7 @@ import {
     updateUserProfile,
     updatePost,
     deletePost,
+    uploadFile,
     type Post,
     type UserProfile,
 } from "../api";
@@ -21,7 +22,6 @@ const ProfilePage: React.FC = () => {
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [editUsername, setEditUsername] = useState("");
-    const [editImgUrl, setEditImgUrl] = useState("");
     const [showEditForm, setShowEditForm] = useState(false);
     const [editingPostId, setEditingPostId] = useState<string | null>(null);
     const [editPostTitle, setEditPostTitle] = useState("");
@@ -29,6 +29,11 @@ const ProfilePage: React.FC = () => {
     const [editPostImgUrl, setEditPostImgUrl] = useState("");
     const [savingPost, setSavingPost] = useState(false);
     const [deletingPostId, setDeletingPostId] = useState<string | null>(null);
+    
+    // Profile photo state
+    const [avatarFile, setAvatarFile] = useState<File | null>(null);
+    const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+    const avatarInputRef = useRef<HTMLInputElement>(null);
 
     const profileId = userId === "me" || !userId ? currentUser?._id : userId;
     const isOwnProfile = !!currentUser && profileId === currentUser._id;
@@ -52,7 +57,8 @@ const ProfilePage: React.FC = () => {
                 setProfile(p);
                 setPosts(userPosts);
                 setEditUsername(p.username);
-                setEditImgUrl(p.imgUrl || "");
+                setAvatarPreview(null);
+                setAvatarFile(null);
             } catch (e) {
                 if (!cancelled) setError(e instanceof Error ? e.message : "Failed to load profile");
             } finally {
@@ -64,25 +70,56 @@ const ProfilePage: React.FC = () => {
         };
     }, [profileId]);
 
+    // ── Profile photo handler ────────────────────────────────────────────────
+    const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0] ?? null;
+        setAvatarFile(file);
+        setAvatarPreview(file ? URL.createObjectURL(file) : null);
+    };
+
+    const cancelEdit = () => {
+        setEditUsername(profile?.username || "");
+        setAvatarFile(null);
+        if (avatarPreview) {
+            URL.revokeObjectURL(avatarPreview);
+            setAvatarPreview(null);
+        }
+        if (avatarInputRef.current) avatarInputRef.current.value = "";
+        setShowEditForm(false);
+    };
+
+    // ── Save profile ─────────────────────────────────────────────────────────
     const handleSave = async (e: FormEvent) => {
         e.preventDefault();
         if (!currentUser || !tokens?.accessToken || !profileId || !isOwnProfile) return;
         try {
             setSaving(true);
             setError(null);
+
+            let imgUrl = profile?.imgUrl ?? "";
+            if (avatarFile) {
+                imgUrl = await uploadFile(avatarFile, tokens.accessToken);
+            }
+
             const updated = await updateUserProfile(
                 profileId,
-                { username: editUsername, imgUrl: editImgUrl },
+                { username: editUsername, imgUrl },
                 tokens.accessToken
             );
-            setProfile(updated);
-            setUser({
-                _id: updated._id,
-                email: updated.email,
-                username: updated.username,
-                imgUrl: updated.imgUrl,
-            });
-            setShowEditForm(false);
+            
+            if (updated) {
+                setProfile(updated);
+                setUser({
+                    _id: updated._id,
+                    email: updated.email,
+                    username: updated.username,
+                    imgUrl: updated.imgUrl,
+                });
+                setAvatarFile(null);
+                setAvatarPreview(null);
+                if (avatarInputRef.current) avatarInputRef.current.value = "";
+                setShowEditForm(false);
+            }
         } catch (e) {
             setError(e instanceof Error ? e.message : "Failed to save");
         } finally {
@@ -189,6 +226,9 @@ const ProfilePage: React.FC = () => {
     const followingCount = profile.following?.length ?? 0;
     const font = "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
 
+    // The main large avatar photo in the header ALWAYS shows the official saved photo from the backend.
+    // It only updates once the backend returns a successful 200 response and we call setProfile.
+    const displayedAvatar = profile.imgUrl;
     return (
         <div style={{ fontFamily: font, color: "#e5e7eb", paddingBottom: 48 }}>
             <div
@@ -215,8 +255,8 @@ const ProfilePage: React.FC = () => {
                         boxShadow: "0 4px 20px rgba(0,0,0,0.4)",
                     }}
                 >
-                    {profile.imgUrl ? (
-                        <img src={profile.imgUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    {displayedAvatar ? (
+                        <img src={displayedAvatar} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                     ) : (
                         <span style={{ fontSize: 48, fontWeight: 700, color: "#64748b" }}>
                             {profile.username.charAt(0).toUpperCase()}
@@ -236,7 +276,7 @@ const ProfilePage: React.FC = () => {
                     <div style={{ marginBottom: 24 }}>
                         <button
                             type="button"
-                            onClick={() => setShowEditForm((v) => !v)}
+                            onClick={showEditForm ? cancelEdit : () => setShowEditForm(true)}
                             style={{
                                 padding: "10px 24px",
                                 borderRadius: 9999,
@@ -285,25 +325,60 @@ const ProfilePage: React.FC = () => {
                                     }}
                                 />
                             </label>
-                            <label style={{ fontSize: 14 }}>
-                                Profile photo URL
-                                <input
-                                    type="url"
-                                    value={editImgUrl}
-                                    onChange={(e) => setEditImgUrl(e.target.value)}
-                                    placeholder="https://..."
-                                    style={{
-                                        marginTop: 6,
-                                        width: "100%",
-                                        padding: "10px 12px",
-                                        borderRadius: 8,
-                                        border: "1px solid rgba(148,163,184,0.4)",
-                                        backgroundColor: "#0f172a",
-                                        color: "#e5e7eb",
-                                        outline: "none",
-                                        fontSize: 15,
-                                    }}
-                                />
+                            {/* Profile photo file picker */}
+                            <label style={{ fontSize: 14, color: "#94a3b8" }}>
+                                Profile photo
+                                <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 12 }}>
+                                    {/* Current / preview thumbnail */}
+                                    <div
+                                        style={{
+                                            width: 56,
+                                            height: 56,
+                                            borderRadius: "50%",
+                                            overflow: "hidden",
+                                            border: "2px solid rgba(148,163,184,0.3)",
+                                            background: "#1e293b",
+                                            flexShrink: 0,
+                                        }}
+                                    >
+                                        {(avatarPreview ?? profile.imgUrl) ? (
+                                            <img
+                                                src={avatarPreview ?? profile.imgUrl}
+                                                alt=""
+                                                style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                                            />
+                                        ) : (
+                                            <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                                <span style={{ fontSize: 22, color: "#64748b" }}>
+                                                    {profile.username.charAt(0).toUpperCase()}
+                                                </span>
+                                            </div>
+                                        )}
+                                    </div>
+                                    <label
+                                        htmlFor="profile-avatar-input"
+                                        style={{
+                                            padding: "7px 14px",
+                                            borderRadius: 8,
+                                            border: "1px solid rgba(148,163,184,0.4)",
+                                            background: "#0f172a",
+                                            color: "#94a3b8",
+                                            fontSize: 13,
+                                            cursor: "pointer",
+                                            whiteSpace: "nowrap",
+                                        }}
+                                    >
+                                        {avatarFile ? "Change photo" : "Choose photo"}
+                                    </label>
+                                    <input
+                                        id="profile-avatar-input"
+                                        ref={avatarInputRef}
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={handleAvatarChange}
+                                        style={{ display: "none" }}
+                                    />
+                                </div>
                             </label>
                             {error && (
                                 <div

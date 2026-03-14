@@ -5,6 +5,7 @@ import {
     getPostById,
     getComments,
     addComment,
+    deleteComment,
     likePost,
     getUserProfile,
     type Post,
@@ -91,6 +92,16 @@ const PostPage: React.FC = () => {
             setCommentText("");
         } finally {
             setSubmittingComment(false);
+        }
+    };
+
+    const handleDeleteComment = async (commentId: string) => {
+        if (!tokens?.accessToken || !window.confirm("Are you sure you want to delete this comment?")) return;
+        try {
+            await deleteComment(tokens.accessToken, commentId);
+            setComments((prev) => prev.filter((c) => c._id !== commentId));
+        } catch (e) {
+            alert(e instanceof Error ? e.message : "Failed to delete comment");
         }
     };
 
@@ -404,6 +415,29 @@ const PostPage: React.FC = () => {
                                         <span style={{ fontSize: 12, color: "#64748b" }}>
                                             {new Date(c.createdAt).toLocaleString()}
                                         </span>
+                                        {user && authorId === user._id && (
+                                            <button
+                                                type="button"
+                                                onClick={() => handleDeleteComment(c._id)}
+                                                style={{
+                                                    marginLeft: "auto",
+                                                    background: "none",
+                                                    border: "none",
+                                                    color: "#ef4444",
+                                                    fontSize: 12,
+                                                    cursor: "pointer",
+                                                    padding: "4px 8px",
+                                                    borderRadius: 6,
+                                                    transition: "background 0.2s",
+                                                }}
+                                                onMouseOver={(e) =>
+                                                    (e.currentTarget.style.background = "rgba(239, 68, 68, 0.1)")
+                                                }
+                                                onMouseOut={(e) => (e.currentTarget.style.background = "none")}
+                                            >
+                                                Delete
+                                            </button>
+                                        )}
                                     </div>
                                     <p style={{ fontSize: 14, color: "#cbd5e1", margin: 0, whiteSpace: "pre-wrap" }}>
                                         {c.content}

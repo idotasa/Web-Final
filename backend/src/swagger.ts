@@ -1,5 +1,6 @@
 import swaggerJsdoc from "swagger-jsdoc";
 import swaggerUi from "swagger-ui-express";
+import config from "./config";
 
 const options: swaggerJsdoc.Options = {
     definition: {
@@ -11,8 +12,8 @@ const options: swaggerJsdoc.Options = {
         },
         servers: [
             {
-                url: process.env.BASE_URL || "http://localhost:3000",
-                description: "Development server",
+                url: config.DOMAIN_BASE,
+                description: "Environment server",
             },
         ],
         components: {

@@ -1,8 +1,8 @@
 import initApp from "./app";
+import config from "./config";
 
 initApp().then((app) => {
-    const port = process.env.PORT || 3000;
-    app.listen(port, () => {
-        console.log(`Server running on http://localhost:${port}`);
+    app.listen(config.PORT, () => {
+        console.log(`Server running on ${config.DOMAIN_BASE}`);
     });
 });

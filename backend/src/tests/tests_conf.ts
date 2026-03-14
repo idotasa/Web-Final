@@ -121,3 +121,23 @@ export const COMMENT_OTHER_DELETE_USER = {
 
 export const MALFORMED_POST_ID = "not-a-valid-id";
 
+// Google Auth tests
+export const GOOGLE_NEW_USER = {
+  email: "google-test@example.com",
+  name: "Google User",
+  picture: "http://image.com/pic.jpg",
+  sub: "12345",
+};
+
+export const GOOGLE_EXISTING_USER = {
+  email: "google-test@example.com",
+  name: "Google User Updated",
+  picture: "http://image.com/pic-updated.jpg",
+  sub: "12345",
+};
+
+export const GOOGLE_NO_EMAIL_USER = {
+  name: "No Email User",
+  sub: "99999",
+};
+
