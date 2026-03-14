@@ -1,4 +1,4 @@
-const API_BASE_URL = (import.meta as unknown as { env: { VITE_API_BASE_URL: string } }).env.VITE_API_BASE_URL;
+const API_BASE_URL = (import.meta as unknown as { env?: { VITE_API_BASE_URL?: string } }).env?.VITE_API_BASE_URL ?? "http://localhost:3000";
 
 export type AuthTokens = {
     accessToken: string;
@@ -313,7 +313,6 @@ export async function deleteComment(accessToken: string, commentId: string): Pro
         throw new Error((data && data.error) || "Failed to delete comment");
     }
 }
-
 // File upload
 export async function uploadFile(file: File, accessToken?: string): Promise<string> {
     const formData = new FormData();

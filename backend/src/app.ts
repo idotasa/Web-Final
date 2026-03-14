@@ -1,7 +1,7 @@
 import express, { Express } from "express";
 import cors from "cors";
-import mongoose from "mongoose";
 import path from "path";
+import mongoose from "mongoose";
 import authRoutes from "./routes/authRoutes";
 import postRoutes from "./routes/postRoutes";
 import commentRoutes from "./routes/commentRoutes";

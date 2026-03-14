@@ -23,17 +23,23 @@ const ProfilePage: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [editUsername, setEditUsername] = useState("");
     const [showEditForm, setShowEditForm] = useState(false);
-    const [editingPostId, setEditingPostId] = useState<string | null>(null);
-    const [editPostTitle, setEditPostTitle] = useState("");
-    const [editPostContent, setEditPostContent] = useState("");
-    const [editPostImgUrl, setEditPostImgUrl] = useState("");
-    const [savingPost, setSavingPost] = useState(false);
-    const [deletingPostId, setDeletingPostId] = useState<string | null>(null);
-    
+
     // Profile photo state
     const [avatarFile, setAvatarFile] = useState<File | null>(null);
     const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
     const avatarInputRef = useRef<HTMLInputElement>(null);
+
+    // Post editing state
+    const [editingPostId, setEditingPostId] = useState<string | null>(null);
+    const [editPostTitle, setEditPostTitle] = useState("");
+    const [editPostContent, setEditPostContent] = useState("");
+    const [editPostImgUrl, setEditPostImgUrl] = useState(""); // existing URL (from server)
+    const [editPostImageFile, setEditPostImageFile] = useState<File | null>(null);
+    const [editPostPreview, setEditPostPreview] = useState<string | null>(null);
+    const postImgInputRef = useRef<HTMLInputElement>(null);
+    const [savingPost, setSavingPost] = useState(false);
+    const [deletingPostId, setDeletingPostId] = useState<string | null>(null);
+    
 
     const profileId = userId === "me" || !userId ? currentUser?._id : userId;
     const isOwnProfile = !!currentUser && profileId === currentUser._id;
@@ -106,7 +112,6 @@ const ProfilePage: React.FC = () => {
                 { username: editUsername, imgUrl },
                 tokens.accessToken
             );
-            
             if (updated) {
                 setProfile(updated);
                 setUser({
@@ -127,11 +132,21 @@ const ProfilePage: React.FC = () => {
         }
     };
 
+    // ── Post editing ─────────────────────────────────────────────────────────
     const startEditPost = (p: Post) => {
         setEditingPostId(p._id);
         setEditPostTitle(p.title);
         setEditPostContent(p.content || "");
         setEditPostImgUrl(p.imgUrl || "");
+        setEditPostImageFile(null);
+        setEditPostPreview(p.imgUrl || null);
+        if (postImgInputRef.current) postImgInputRef.current.value = "";
+    };
+
+    const handlePostImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0] ?? null;
+        setEditPostImageFile(file);
+        setEditPostPreview(file ? URL.createObjectURL(file) : editPostImgUrl || null);
     };
 
     const handleSavePost = async (e: FormEvent) => {
@@ -140,10 +155,14 @@ const ProfilePage: React.FC = () => {
         setSavingPost(true);
         setError(null);
         try {
+            let imgUrl = editPostImgUrl || undefined;
+            if (editPostImageFile) {
+                imgUrl = await uploadFile(editPostImageFile, tokens.accessToken);
+            }
             const updated = await updatePost(tokens.accessToken, editingPostId, {
                 title: editPostTitle.trim(),
                 content: editPostContent.trim() || undefined,
-                imgUrl: editPostImgUrl.trim() || undefined,
+                imgUrl,
             });
             setPosts((prev) => prev.map((p) => (p._id === updated._id ? updated : p)));
             setEditingPostId(null);
@@ -253,6 +272,7 @@ const ProfilePage: React.FC = () => {
                         justifyContent: "center",
                         flexShrink: 0,
                         boxShadow: "0 4px 20px rgba(0,0,0,0.4)",
+                        position: "relative",
                     }}
                 >
                     {displayedAvatar ? (
@@ -322,6 +342,7 @@ const ProfilePage: React.FC = () => {
                                         color: "#e5e7eb",
                                         outline: "none",
                                         fontSize: 15,
+                                        boxSizing: "border-box",
                                     }}
                                 />
                             </label>
@@ -380,6 +401,7 @@ const ProfilePage: React.FC = () => {
                                     />
                                 </div>
                             </label>
+
                             {error && (
                                 <div
                                     style={{
@@ -477,20 +499,50 @@ const ProfilePage: React.FC = () => {
                                                     resize: "vertical",
                                                 }}
                                             />
-                                            <input
-                                                value={editPostImgUrl}
-                                                onChange={(e) => setEditPostImgUrl(e.target.value)}
-                                                placeholder="Image URL (optional)"
-                                                type="url"
-                                                style={{
-                                                    padding: "8px 10px",
-                                                    borderRadius: 8,
-                                                    border: "1px solid rgba(148,163,184,0.4)",
-                                                    background: "#0f172a",
-                                                    color: "#e5e7eb",
-                                                    fontSize: 14,
-                                                }}
-                                            />
+
+                                            {/* Post image picker */}
+                                            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                                <label
+                                                    htmlFor={`post-img-${post._id}`}
+                                                    style={{
+                                                        padding: "6px 12px",
+                                                        borderRadius: 7,
+                                                        border: "1px solid rgba(148,163,184,0.4)",
+                                                        background: "#0f172a",
+                                                        color: "#94a3b8",
+                                                        fontSize: 12,
+                                                        cursor: "pointer",
+                                                        whiteSpace: "nowrap",
+                                                    }}
+                                                >
+                                                    {editPostImageFile ? "Change image" : editPostImgUrl ? "Replace image" : "Add image"}
+                                                </label>
+                                                <input
+                                                    id={`post-img-${post._id}`}
+                                                    ref={postImgInputRef}
+                                                    type="file"
+                                                    accept="image/*"
+                                                    onChange={handlePostImageChange}
+                                                    style={{ display: "none" }}
+                                                />
+                                                {editPostImageFile && (
+                                                    <span style={{ fontSize: 11, color: "#64748b", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                                        {editPostImageFile.name}
+                                                    </span>
+                                                )}
+                                            </div>
+
+                                            {/* Image preview */}
+                                            {editPostPreview && (
+                                                <div style={{ borderRadius: 8, overflow: "hidden", border: "1px solid rgba(148,163,184,0.2)" }}>
+                                                    <img
+                                                        src={editPostPreview}
+                                                        alt="Preview"
+                                                        style={{ width: "100%", maxHeight: 160, objectFit: "cover", display: "block" }}
+                                                    />
+                                                </div>
+                                            )}
+
                                             <div style={{ display: "flex", gap: 8 }}>
                                                 <button
                                                     type="submit"
