@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { getFeed, type FeedPost, type Post } from "../api";
 import LoginPage from "./LoginPage";
-import CreatePostForm from "../components/CreatePostForm";
+import CreatePostModal from "../components/CreatePostModal";
 import FeedPostCard from "../components/FeedPostCard";
 
 const PAGE_SIZE = 10;
@@ -16,6 +16,7 @@ const HomePage: React.FC = () => {
     const [hasMore, setHasMore] = useState(true);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [createPostOpen, setCreatePostOpen] = useState(false);
 
     const loadFeed = useCallback(
         async (pageNum: number, append: boolean) => {
@@ -79,26 +80,52 @@ const HomePage: React.FC = () => {
     }
 
     return (
-        <div style={{ fontFamily: font, color: "#e5e7eb" }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24, flexWrap: "wrap", gap: 12 }}>
-                <h2 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>Feed</h2>
-                <Link
-                    to="/profile/me"
+        <div style={{ fontFamily: font, color: "#e5e7eb", minHeight: "100%" }}>
+            <CreatePostModal
+                isOpen={createPostOpen}
+                onClose={() => setCreatePostOpen(false)}
+                accessToken={tokens!.accessToken}
+                onSubmitSuccess={handleNewPost}
+            />
+
+            <button
+                type="button"
+                onClick={() => setCreatePostOpen(true)}
+                style={{
+                    width: "100%",
+                    padding: "14px 18px",
+                    marginBottom: 16,
+                    textAlign: "left",
+                    borderRadius: 16,
+                    border: "1px solid rgba(148,163,184,0.25)",
+                    background: "rgba(30,41,59,0.5)",
+                    color: "#94a3b8",
+                    fontSize: 16,
+                    cursor: "pointer",
+                    fontFamily: font,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 12,
+                }}
+            >
+                <span
                     style={{
-                        padding: "10px 18px",
-                        borderRadius: 9999,
-                        background: "rgba(148,163,184,0.2)",
-                        color: "#e5e7eb",
-                        textDecoration: "none",
-                        fontWeight: 600,
-                        fontSize: 14,
+                        width: 40,
+                        height: 40,
+                        borderRadius: "50%",
+                        background: "#1e293b",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontWeight: 700,
+                        color: "#64748b",
+                        flexShrink: 0,
                     }}
                 >
-                    My profile
-                </Link>
-            </div>
-
-            <CreatePostForm accessToken={tokens!.accessToken} onSubmitSuccess={handleNewPost} />
+                    {user.username.charAt(0).toUpperCase()}
+                </span>
+                What's on your mind?
+            </button>
 
             {error && (
                 <div
@@ -127,7 +154,7 @@ const HomePage: React.FC = () => {
                 >
                     <p style={{ fontSize: 18, fontWeight: 600, marginBottom: 8 }}>Your feed is empty</p>
                     <p style={{ color: "#94a3b8", marginBottom: 20, maxWidth: 400, margin: "0 auto 20px" }}>
-                        Follow people from their profiles to see their posts here. You can also create a post above.
+                        Follow people from their profiles to see their posts here. Create a post using the button above.
                     </p>
                     <Link
                         to="/profile/me"

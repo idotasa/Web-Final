@@ -23,6 +23,12 @@ export type UserProfile = {
     following?: string[];
 };
 
+export type UserSummary = {
+    _id: string;
+    username: string;
+    imgUrl?: string;
+};
+
 export type Post = {
     _id: string;
     title: string;
@@ -146,6 +152,39 @@ export async function getPostsByOwner(ownerId: string): Promise<Post[]> {
     const res = await fetch(`${API_BASE_URL}/post?${params.toString()}`);
     if (!res.ok) throw new Error("Failed to load posts");
     return (await res.json()) as Post[];
+}
+
+export async function getFollowing(userId: string): Promise<UserSummary[]> {
+    const res = await fetch(`${API_BASE_URL}/user/${userId}/following`);
+    if (!res.ok) throw new Error("Failed to load following");
+    return (await res.json()) as UserSummary[];
+}
+
+export async function getFollowers(userId: string): Promise<UserSummary[]> {
+    const res = await fetch(`${API_BASE_URL}/user/${userId}/followers`);
+    if (!res.ok) throw new Error("Failed to load followers");
+    return (await res.json()) as UserSummary[];
+}
+
+export async function toggleFollow(
+    accessToken: string,
+    userId: string
+): Promise<{ isFollowing: boolean; followersCount: number }> {
+    const res = await fetch(`${API_BASE_URL}/user/${userId}/follow`, {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error((data && data.error) || "Failed to update follow");
+    }
+    return (await res.json()) as { isFollowing: boolean; followersCount: number };
+}
+
+export async function searchUsers(q: string): Promise<UserSummary[]> {
+    const res = await fetch(`${API_BASE_URL}/user/search?q=${encodeURIComponent(q)}`);
+    if (!res.ok) throw new Error("Search failed");
+    return (await res.json()) as UserSummary[];
 }
 
 // Feed (auth required)

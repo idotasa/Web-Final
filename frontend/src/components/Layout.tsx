@@ -1,6 +1,7 @@
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import Sidebar from "./Sidebar";
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const { user, logout } = useAuth();
@@ -73,9 +74,21 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                     </button>
                 </nav>
             </header>
-            <main style={{ padding: "24px 24px 48px", maxWidth: 900, margin: "0 auto" }}>
-                {children}
-            </main>
+            <div
+                style={{
+                    display: "flex",
+                    gap: 24,
+                    padding: "24px 24px 48px",
+                    maxWidth: 1200,
+                    margin: "0 auto",
+                    alignItems: "flex-start",
+                }}
+            >
+                <main style={{ flex: 1, minWidth: 0, maxWidth: 640 }}>
+                    {children}
+                </main>
+                <Sidebar currentUserId={user._id} />
+            </div>
         </div>
     );
 };

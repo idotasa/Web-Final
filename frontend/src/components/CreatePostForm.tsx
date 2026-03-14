@@ -53,9 +53,6 @@ const CreatePostForm: React.FC<CreatePostFormProps> = ({ accessToken, onSubmitSu
                 marginBottom: 24,
             }}
         >
-            <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 16, color: "#e5e7eb" }}>
-                Create a post
-            </h3>
             <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
                 <label style={{ fontSize: 14, color: "#94a3b8" }}>
                     Title
