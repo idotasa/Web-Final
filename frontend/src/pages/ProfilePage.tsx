@@ -1,4 +1,4 @@
-import React, { FormEvent, useEffect, useState } from "react";
+import React, { FormEvent, useEffect, useRef, useState } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import {
@@ -7,6 +7,7 @@ import {
     updateUserProfile,
     updatePost,
     deletePost,
+    uploadFile,
     type Post,
     type UserProfile,
 } from "../api";
@@ -21,12 +22,21 @@ const ProfilePage: React.FC = () => {
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [editUsername, setEditUsername] = useState("");
-    const [editImgUrl, setEditImgUrl] = useState("");
     const [showEditForm, setShowEditForm] = useState(false);
+
+    // Profile photo state
+    const [avatarFile, setAvatarFile] = useState<File | null>(null);
+    const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+    const avatarInputRef = useRef<HTMLInputElement>(null);
+
+    // Post editing state
     const [editingPostId, setEditingPostId] = useState<string | null>(null);
     const [editPostTitle, setEditPostTitle] = useState("");
     const [editPostContent, setEditPostContent] = useState("");
-    const [editPostImgUrl, setEditPostImgUrl] = useState("");
+    const [editPostImgUrl, setEditPostImgUrl] = useState(""); // existing URL (from server)
+    const [editPostImageFile, setEditPostImageFile] = useState<File | null>(null);
+    const [editPostPreview, setEditPostPreview] = useState<string | null>(null);
+    const postImgInputRef = useRef<HTMLInputElement>(null);
     const [savingPost, setSavingPost] = useState(false);
     const [deletingPostId, setDeletingPostId] = useState<string | null>(null);
 
@@ -52,7 +62,8 @@ const ProfilePage: React.FC = () => {
                 setProfile(p);
                 setPosts(userPosts);
                 setEditUsername(p.username);
-                setEditImgUrl(p.imgUrl || "");
+                setAvatarPreview(null);
+                setAvatarFile(null);
             } catch (e) {
                 if (!cancelled) setError(e instanceof Error ? e.message : "Failed to load profile");
             } finally {
@@ -64,15 +75,29 @@ const ProfilePage: React.FC = () => {
         };
     }, [profileId]);
 
+    // ── Profile photo handler ────────────────────────────────────────────────
+    const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0] ?? null;
+        setAvatarFile(file);
+        setAvatarPreview(file ? URL.createObjectURL(file) : null);
+    };
+
+    // ── Save profile ─────────────────────────────────────────────────────────
     const handleSave = async (e: FormEvent) => {
         e.preventDefault();
         if (!currentUser || !tokens?.accessToken || !profileId || !isOwnProfile) return;
         try {
             setSaving(true);
             setError(null);
+
+            let imgUrl = profile?.imgUrl ?? "";
+            if (avatarFile) {
+                imgUrl = await uploadFile(avatarFile, tokens.accessToken);
+            }
+
             const updated = await updateUserProfile(
                 profileId,
-                { username: editUsername, imgUrl: editImgUrl },
+                { username: editUsername, imgUrl },
                 tokens.accessToken
             );
             setProfile(updated);
@@ -82,6 +107,9 @@ const ProfilePage: React.FC = () => {
                 username: updated.username,
                 imgUrl: updated.imgUrl,
             });
+            setAvatarFile(null);
+            setAvatarPreview(null);
+            if (avatarInputRef.current) avatarInputRef.current.value = "";
             setShowEditForm(false);
         } catch (e) {
             setError(e instanceof Error ? e.message : "Failed to save");
@@ -90,11 +118,21 @@ const ProfilePage: React.FC = () => {
         }
     };
 
+    // ── Post editing ─────────────────────────────────────────────────────────
     const startEditPost = (p: Post) => {
         setEditingPostId(p._id);
         setEditPostTitle(p.title);
         setEditPostContent(p.content || "");
         setEditPostImgUrl(p.imgUrl || "");
+        setEditPostImageFile(null);
+        setEditPostPreview(p.imgUrl || null);
+        if (postImgInputRef.current) postImgInputRef.current.value = "";
+    };
+
+    const handlePostImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0] ?? null;
+        setEditPostImageFile(file);
+        setEditPostPreview(file ? URL.createObjectURL(file) : editPostImgUrl || null);
     };
 
     const handleSavePost = async (e: FormEvent) => {
@@ -103,10 +141,14 @@ const ProfilePage: React.FC = () => {
         setSavingPost(true);
         setError(null);
         try {
+            let imgUrl = editPostImgUrl || undefined;
+            if (editPostImageFile) {
+                imgUrl = await uploadFile(editPostImageFile, tokens.accessToken);
+            }
             const updated = await updatePost(tokens.accessToken, editingPostId, {
                 title: editPostTitle.trim(),
                 content: editPostContent.trim() || undefined,
-                imgUrl: editPostImgUrl.trim() || undefined,
+                imgUrl,
             });
             setPosts((prev) => prev.map((p) => (p._id === updated._id ? updated : p)));
             setEditingPostId(null);
@@ -189,6 +231,10 @@ const ProfilePage: React.FC = () => {
     const followingCount = profile.following?.length ?? 0;
     const font = "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
 
+    // The avatar to show in the header uses the local preview (if a new file has been selected)
+    // or falls back to the saved profile photo.
+    const displayedAvatar = avatarPreview ?? profile.imgUrl;
+
     return (
         <div style={{ fontFamily: font, color: "#e5e7eb", paddingBottom: 48 }}>
             <div
@@ -213,10 +259,11 @@ const ProfilePage: React.FC = () => {
                         justifyContent: "center",
                         flexShrink: 0,
                         boxShadow: "0 4px 20px rgba(0,0,0,0.4)",
+                        position: "relative",
                     }}
                 >
-                    {profile.imgUrl ? (
-                        <img src={profile.imgUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    {displayedAvatar ? (
+                        <img src={displayedAvatar} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                     ) : (
                         <span style={{ fontSize: 48, fontWeight: 700, color: "#64748b" }}>
                             {profile.username.charAt(0).toUpperCase()}
@@ -282,29 +329,67 @@ const ProfilePage: React.FC = () => {
                                         color: "#e5e7eb",
                                         outline: "none",
                                         fontSize: 15,
+                                        boxSizing: "border-box",
                                     }}
                                 />
                             </label>
-                            <label style={{ fontSize: 14 }}>
-                                Profile photo URL
-                                <input
-                                    type="url"
-                                    value={editImgUrl}
-                                    onChange={(e) => setEditImgUrl(e.target.value)}
-                                    placeholder="https://..."
-                                    style={{
-                                        marginTop: 6,
-                                        width: "100%",
-                                        padding: "10px 12px",
-                                        borderRadius: 8,
-                                        border: "1px solid rgba(148,163,184,0.4)",
-                                        backgroundColor: "#0f172a",
-                                        color: "#e5e7eb",
-                                        outline: "none",
-                                        fontSize: 15,
-                                    }}
-                                />
+
+                            {/* Profile photo file picker */}
+                            <label style={{ fontSize: 14, color: "#94a3b8" }}>
+                                Profile photo
+                                <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 12 }}>
+                                    {/* Current / preview thumbnail */}
+                                    <div
+                                        style={{
+                                            width: 56,
+                                            height: 56,
+                                            borderRadius: "50%",
+                                            overflow: "hidden",
+                                            border: "2px solid rgba(148,163,184,0.3)",
+                                            background: "#1e293b",
+                                            flexShrink: 0,
+                                        }}
+                                    >
+                                        {(avatarPreview ?? profile.imgUrl) ? (
+                                            <img
+                                                src={avatarPreview ?? profile.imgUrl}
+                                                alt=""
+                                                style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                                            />
+                                        ) : (
+                                            <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                                <span style={{ fontSize: 22, color: "#64748b" }}>
+                                                    {profile.username.charAt(0).toUpperCase()}
+                                                </span>
+                                            </div>
+                                        )}
+                                    </div>
+                                    <label
+                                        htmlFor="profile-avatar-input"
+                                        style={{
+                                            padding: "7px 14px",
+                                            borderRadius: 8,
+                                            border: "1px solid rgba(148,163,184,0.4)",
+                                            background: "#0f172a",
+                                            color: "#94a3b8",
+                                            fontSize: 13,
+                                            cursor: "pointer",
+                                            whiteSpace: "nowrap",
+                                        }}
+                                    >
+                                        {avatarFile ? "Change photo" : "Choose photo"}
+                                    </label>
+                                    <input
+                                        id="profile-avatar-input"
+                                        ref={avatarInputRef}
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={handleAvatarChange}
+                                        style={{ display: "none" }}
+                                    />
+                                </div>
                             </label>
+
                             {error && (
                                 <div
                                     style={{
@@ -402,20 +487,50 @@ const ProfilePage: React.FC = () => {
                                                     resize: "vertical",
                                                 }}
                                             />
-                                            <input
-                                                value={editPostImgUrl}
-                                                onChange={(e) => setEditPostImgUrl(e.target.value)}
-                                                placeholder="Image URL (optional)"
-                                                type="url"
-                                                style={{
-                                                    padding: "8px 10px",
-                                                    borderRadius: 8,
-                                                    border: "1px solid rgba(148,163,184,0.4)",
-                                                    background: "#0f172a",
-                                                    color: "#e5e7eb",
-                                                    fontSize: 14,
-                                                }}
-                                            />
+
+                                            {/* Post image picker */}
+                                            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                                <label
+                                                    htmlFor={`post-img-${post._id}`}
+                                                    style={{
+                                                        padding: "6px 12px",
+                                                        borderRadius: 7,
+                                                        border: "1px solid rgba(148,163,184,0.4)",
+                                                        background: "#0f172a",
+                                                        color: "#94a3b8",
+                                                        fontSize: 12,
+                                                        cursor: "pointer",
+                                                        whiteSpace: "nowrap",
+                                                    }}
+                                                >
+                                                    {editPostImageFile ? "Change image" : editPostImgUrl ? "Replace image" : "Add image"}
+                                                </label>
+                                                <input
+                                                    id={`post-img-${post._id}`}
+                                                    ref={postImgInputRef}
+                                                    type="file"
+                                                    accept="image/*"
+                                                    onChange={handlePostImageChange}
+                                                    style={{ display: "none" }}
+                                                />
+                                                {editPostImageFile && (
+                                                    <span style={{ fontSize: 11, color: "#64748b", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                                        {editPostImageFile.name}
+                                                    </span>
+                                                )}
+                                            </div>
+
+                                            {/* Image preview */}
+                                            {editPostPreview && (
+                                                <div style={{ borderRadius: 8, overflow: "hidden", border: "1px solid rgba(148,163,184,0.2)" }}>
+                                                    <img
+                                                        src={editPostPreview}
+                                                        alt="Preview"
+                                                        style={{ width: "100%", maxHeight: 160, objectFit: "cover", display: "block" }}
+                                                    />
+                                                </div>
+                                            )}
+
                                             <div style={{ display: "flex", gap: 8 }}>
                                                 <button
                                                     type="submit"

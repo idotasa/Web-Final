@@ -120,9 +120,14 @@ const HomePage: React.FC = () => {
                         fontWeight: 700,
                         color: "#64748b",
                         flexShrink: 0,
+                        overflow: "hidden",
                     }}
                 >
-                    {user.username.charAt(0).toUpperCase()}
+                    {user.imgUrl ? (
+                        <img src={user.imgUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    ) : (
+                        user.username.charAt(0).toUpperCase()
+                    )}
                 </span>
                 What's on your mind?
             </button>

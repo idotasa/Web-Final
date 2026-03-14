@@ -1,5 +1,6 @@
 import React, { FormEvent, useEffect, useRef, useState } from "react";
 import { useAuth } from "../context/AuthContext";
+import { uploadFile } from "../api";
 
 declare global {
     interface Window {
@@ -20,12 +21,37 @@ const LoginPage: React.FC = () => {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [username, setUsername] = useState("");
+    const [avatarFile, setAvatarFile] = useState<File | null>(null);
+    const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+    const [uploadingAvatar, setUploadingAvatar] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
     const googleButtonRef = useRef<HTMLDivElement>(null);
+
+    const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0] ?? null;
+        setAvatarFile(file);
+        setAvatarPreview(file ? URL.createObjectURL(file) : null);
+    };
 
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
-        if (mode === "login") await login(email, password);
-        else await register(email, password, username);
+        if (mode === "login") {
+            await login(email, password);
+        } else {
+            let imgUrl: string | undefined;
+            if (avatarFile) {
+                setUploadingAvatar(true);
+                try {
+                    imgUrl = await uploadFile(avatarFile);
+                } catch {
+                    // If upload fails don't block registration — just skip the avatar
+                    imgUrl = undefined;
+                } finally {
+                    setUploadingAvatar(false);
+                }
+            }
+            await register(email, password, username, imgUrl);
+        }
     };
 
     const isSignup = mode === "signup";
@@ -56,6 +82,19 @@ const LoginPage: React.FC = () => {
         return () => cancelAnimationFrame(id);
     }, [loginWithGoogle, isSignup]);
 
+    const inputStyle: React.CSSProperties = {
+        marginTop: 6,
+        width: "100%",
+        padding: "10px 12px",
+        borderRadius: 10,
+        border: "1px solid rgba(148,163,184,0.5)",
+        backgroundColor: "#020617",
+        color: "#e5e7eb",
+        outline: "none",
+        fontSize: 14,
+        boxSizing: "border-box",
+    };
+
     return (
         <div
             style={{
@@ -71,8 +110,6 @@ const LoginPage: React.FC = () => {
                 style={{
                     width: "100%",
                     maxWidth: 420,
-                    height: 520,
-                    minHeight: 520,
                     backgroundColor: "rgba(15,23,42,0.95)",
                     borderRadius: 16,
                     padding: 32,
@@ -90,6 +127,7 @@ const LoginPage: React.FC = () => {
                     {isSignup ? "Create your account." : "Login with your email and password."}
                 </p>
 
+                {/* Mode toggle */}
                 <div
                     style={{
                         display: "flex",
@@ -139,27 +177,62 @@ const LoginPage: React.FC = () => {
 
                 <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
                     {isSignup && (
-                        <label style={{ fontSize: 14 }}>
-                            Username
-                            <input
-                                type="text"
-                                value={username}
-                                onChange={(e) => setUsername(e.target.value)}
-                                required
-                                placeholder="Your username"
-                                style={{
-                                    marginTop: 6,
-                                    width: "100%",
-                                    padding: "10px 12px",
-                                    borderRadius: 10,
-                                    border: "1px solid rgba(148,163,184,0.5)",
-                                    backgroundColor: "#020617",
-                                    color: "#e5e7eb",
-                                    outline: "none",
-                                    fontSize: 14,
-                                }}
-                            />
-                        </label>
+                        <>
+                            {/* Avatar picker with preview */}
+                            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
+                                <div
+                                    style={{
+                                        width: 80,
+                                        height: 80,
+                                        borderRadius: "50%",
+                                        overflow: "hidden",
+                                        border: "2px solid rgba(148,163,184,0.4)",
+                                        background: "#1e293b",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        flexShrink: 0,
+                                    }}
+                                >
+                                    {avatarPreview ? (
+                                        <img src={avatarPreview} alt="Avatar preview" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                                    ) : (
+                                        <span style={{ fontSize: 32, color: "#64748b" }}>👤</span>
+                                    )}
+                                </div>
+                                <label
+                                    htmlFor="signup-avatar"
+                                    style={{
+                                        fontSize: 12,
+                                        color: "#0ea5e9",
+                                        cursor: "pointer",
+                                        textDecoration: "underline",
+                                    }}
+                                >
+                                    {avatarFile ? "Change photo" : "Upload profile photo (optional)"}
+                                </label>
+                                <input
+                                    id="signup-avatar"
+                                    ref={fileInputRef}
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={handleAvatarChange}
+                                    style={{ display: "none" }}
+                                />
+                            </div>
+
+                            <label style={{ fontSize: 14 }}>
+                                Username
+                                <input
+                                    type="text"
+                                    value={username}
+                                    onChange={(e) => setUsername(e.target.value)}
+                                    required
+                                    placeholder="Your username"
+                                    style={inputStyle}
+                                />
+                            </label>
+                        </>
                     )}
                     <label style={{ fontSize: 14 }}>
                         Email
@@ -169,17 +242,7 @@ const LoginPage: React.FC = () => {
                             onChange={(e) => setEmail(e.target.value)}
                             required
                             placeholder="you@example.com"
-                            style={{
-                                marginTop: 6,
-                                width: "100%",
-                                padding: "10px 12px",
-                                borderRadius: 10,
-                                border: "1px solid rgba(148,163,184,0.5)",
-                                backgroundColor: "#020617",
-                                color: "#e5e7eb",
-                                outline: "none",
-                                fontSize: 14,
-                            }}
+                            style={inputStyle}
                         />
                     </label>
                     <label style={{ fontSize: 14 }}>
@@ -190,17 +253,7 @@ const LoginPage: React.FC = () => {
                             onChange={(e) => setPassword(e.target.value)}
                             required
                             placeholder="••••••••"
-                            style={{
-                                marginTop: 6,
-                                width: "100%",
-                                padding: "10px 12px",
-                                borderRadius: 10,
-                                border: "1px solid rgba(148,163,184,0.5)",
-                                backgroundColor: "#020617",
-                                color: "#e5e7eb",
-                                outline: "none",
-                                fontSize: 14,
-                            }}
+                            style={inputStyle}
                         />
                     </label>
                     {error && (
@@ -219,7 +272,7 @@ const LoginPage: React.FC = () => {
                     )}
                     <button
                         type="submit"
-                        disabled={loading}
+                        disabled={loading || uploadingAvatar}
                         style={{
                             marginTop: 8,
                             padding: "10px 14px",
@@ -230,10 +283,18 @@ const LoginPage: React.FC = () => {
                             fontWeight: 600,
                             fontSize: 15,
                             cursor: "pointer",
-                            opacity: loading ? 0.7 : 1,
+                            opacity: loading || uploadingAvatar ? 0.7 : 1,
                         }}
                     >
-                        {loading ? (isSignup ? "Signing up..." : "Logging in...") : isSignup ? "Create account" : "Login"}
+                        {uploadingAvatar
+                            ? "Uploading photo..."
+                            : loading
+                              ? isSignup
+                                  ? "Signing up..."
+                                  : "Logging in..."
+                              : isSignup
+                                ? "Create account"
+                                : "Login"}
                     </button>
                 </form>
 
