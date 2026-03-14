@@ -35,13 +35,33 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                 <Link
                     to="/"
                     style={{
-                        fontSize: 22,
-                        fontWeight: 700,
-                        color: "#e5e7eb",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 12,
                         textDecoration: "none",
+                        color: "#e5e7eb",
                     }}
                 >
-                    IO Social
+                    <div
+                        style={{
+                            width: 42,
+                            height: 42,
+                            borderRadius: "50%",
+                            overflow: "hidden",
+                            flexShrink: 0,
+                            background: "#0f172a",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                        }}
+                    >
+                        <img
+                            src="/logo.png"
+                            alt="iO Social"
+                            style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                        />
+                    </div>
+                    <span style={{ fontSize: 22, fontWeight: 700 }}>IO Social</span>
                 </Link>
                 <nav style={{ display: "flex", alignItems: "center", gap: 16 }}>
                     <Link

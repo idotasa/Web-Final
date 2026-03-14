@@ -1,7 +1,7 @@
 import express from "express";
 const router = express.Router();
 import postController from "../controllers/postController";
-import authMiddleware, { optionalAuthMiddleware } from "../middleware/authMiddleware";
+import authMiddleware from "../middleware/authMiddleware";
 
 /**
  * @swagger
@@ -122,7 +122,7 @@ router.get("/feed", authMiddleware, postController.feed.bind(postController));
  *       404:
  *         description: Post not found
  */
-router.get("/:id", optionalAuthMiddleware, postController.getById.bind(postController));
+router.get("/:id", postController.getById.bind(postController));
 
 /**
  * @swagger
