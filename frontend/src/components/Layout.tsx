@@ -79,17 +79,17 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             <div
                 style={{
                     display: "flex",
-                    gap: 24,
+                    gap: isProfilePage ? 48 : 24,
                     padding: "24px 24px 48px",
-                    maxWidth: isProfilePage ? 900 : 1200,
+                    maxWidth: isProfilePage ? 1200 : 900,
                     margin: "0 auto",
                     alignItems: "flex-start",
                 }}
             >
-                <main style={{ flex: 1, minWidth: 0, maxWidth: isProfilePage ? 900 : 640 }}>
+                <main style={{ flex: 1, minWidth: 0, maxWidth: isProfilePage ? 900 : 640, paddingRight: isProfilePage ? 16 : 0 }}>
                     {children}
                 </main>
-                {!isProfilePage && tokens?.accessToken && <Sidebar currentUserId={user._id} accessToken={tokens.accessToken} />}
+                {isProfilePage && tokens?.accessToken && <Sidebar currentUserId={user._id} accessToken={tokens.accessToken} />}
             </div>
         </div>
     );

@@ -22,25 +22,6 @@ const LoginPage: React.FC = () => {
     const [username, setUsername] = useState("");
     const googleButtonRef = useRef<HTMLDivElement>(null);
 
-    useEffect(() => {
-        const clientId = (import.meta as unknown as { env?: { VITE_GOOGLE_CLIENT_ID?: string } }).env?.VITE_GOOGLE_CLIENT_ID;
-        if (!clientId || !window.google || !googleButtonRef.current) return;
-        window.google.accounts.id.initialize({
-            client_id: clientId,
-            callback: (response: { credential?: string }) => {
-                if (response.credential) loginWithGoogle(response.credential);
-            },
-        });
-        window.google.accounts.id.renderButton(googleButtonRef.current, {
-            type: "standard",
-            theme: "outline",
-            size: "large",
-            shape: "pill",
-            text: "continue_with",
-            width: 320,
-        });
-    }, [loginWithGoogle]);
-
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
         if (mode === "login") await login(email, password);
@@ -48,6 +29,32 @@ const LoginPage: React.FC = () => {
     };
 
     const isSignup = mode === "signup";
+
+    useEffect(() => {
+        if (isSignup) return;
+        const clientId = (import.meta as unknown as { env?: { VITE_GOOGLE_CLIENT_ID?: string } }).env?.VITE_GOOGLE_CLIENT_ID;
+        if (!clientId || !window.google) return;
+        window.google.accounts.id.initialize({
+            client_id: clientId,
+            callback: (response: { credential?: string }) => {
+                if (response.credential) loginWithGoogle(response.credential);
+            },
+        });
+        const id = requestAnimationFrame(() => {
+            const el = googleButtonRef.current;
+            if (el) {
+                window.google!.accounts.id.renderButton(el, {
+                    type: "standard",
+                    theme: "outline",
+                    size: "large",
+                    shape: "pill",
+                    text: "continue_with",
+                    width: 320,
+                });
+            }
+        });
+        return () => cancelAnimationFrame(id);
+    }, [loginWithGoogle, isSignup]);
 
     return (
         <div
@@ -64,12 +71,16 @@ const LoginPage: React.FC = () => {
                 style={{
                     width: "100%",
                     maxWidth: 420,
+                    height: 520,
+                    minHeight: 520,
                     backgroundColor: "rgba(15,23,42,0.95)",
                     borderRadius: 16,
                     padding: 32,
                     boxShadow: "0 24px 80px rgba(15,23,42,0.7)",
                     border: "1px solid rgba(148,163,184,0.3)",
                     color: "#e5e7eb",
+                    display: "flex",
+                    flexDirection: "column",
                 }}
             >
                 <h1 style={{ fontSize: 28, fontWeight: 700, marginBottom: 8, textAlign: "center" }}>
