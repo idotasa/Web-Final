@@ -20,15 +20,7 @@ function App() {
             </BrowserRouter>
         </AuthProvider>
     );
-};
-
-const App: React.FC = () => {
-    return (
-        <AuthProvider>
-            <AppContent />
-        </AuthProvider>
-    );
-};
+}
 
 export default App;
 
