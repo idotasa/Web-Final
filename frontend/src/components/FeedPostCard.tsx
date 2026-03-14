@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { likePost, type FeedPost } from "../api";
 
+// User avatar/name are display-only (no link to other user's profile)
+
 const font = "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
 
 function formatDate(createdAt: string): string {
@@ -68,8 +70,7 @@ const FeedPostCard: React.FC<FeedPostCardProps> = ({ post, accessToken, onLikeUp
                     borderBottom: "1px solid rgba(148,163,184,0.15)",
                 }}
             >
-                <Link
-                    to={ownerId ? `/profile/${ownerId}` : "#"}
+                <div
                     style={{
                         width: 40,
                         height: 40,
@@ -80,7 +81,6 @@ const FeedPostCard: React.FC<FeedPostCardProps> = ({ post, accessToken, onLikeUp
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
-                        textDecoration: "none",
                         color: "#e5e7eb",
                     }}
                 >
@@ -89,20 +89,9 @@ const FeedPostCard: React.FC<FeedPostCardProps> = ({ post, accessToken, onLikeUp
                     ) : (
                         <span style={{ fontSize: 18, fontWeight: 700 }}>{username.charAt(0).toUpperCase()}</span>
                     )}
-                </Link>
+                </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                    <Link
-                        to={ownerId ? `/profile/${ownerId}` : "#"}
-                        style={{
-                            fontWeight: 700,
-                            fontSize: 15,
-                            color: "#e5e7eb",
-                            textDecoration: "none",
-                            display: "block",
-                        }}
-                    >
-                        {username}
-                    </Link>
+                    <span style={{ fontWeight: 700, fontSize: 15, color: "#e5e7eb", display: "block" }}>{username}</span>
                     <time style={{ fontSize: 13, color: "#94a3b8" }}>{formatDate(post.createdAt)}</time>
                 </div>
             </header>

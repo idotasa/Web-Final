@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import { getFollowing, searchUsers, toggleFollow, type UserSummary } from "../api";
 
 const font = "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
@@ -115,15 +114,13 @@ const Sidebar: React.FC<SidebarProps> = ({ currentUserId, accessToken }) => {
                                         justifyContent: "space-between",
                                     }}
                                 >
-                                    <Link
-                                        to={`/profile/${u._id}`}
+                                    <div
                                         style={{
                                             display: "flex",
                                             alignItems: "center",
                                             gap: 12,
                                             flex: 1,
                                             minWidth: 0,
-                                            textDecoration: "none",
                                             color: "#e5e7eb",
                                         }}
                                     >
@@ -149,7 +146,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentUserId, accessToken }) => {
                                             )}
                                         </div>
                                         <span style={{ fontWeight: 600, fontSize: 14 }}>{u.username}</span>
-                                    </Link>
+                                    </div>
                                     <button
                                         type="button"
                                         onClick={(e) => {
@@ -233,15 +230,13 @@ const Sidebar: React.FC<SidebarProps> = ({ currentUserId, accessToken }) => {
                                             justifyContent: "space-between",
                                         }}
                                     >
-                                        <Link
-                                            to={`/profile/${u._id}`}
+                                        <div
                                             style={{
                                                 display: "flex",
                                                 alignItems: "center",
                                                 gap: 10,
                                                 flex: 1,
                                                 minWidth: 0,
-                                                textDecoration: "none",
                                                 color: "#e5e7eb",
                                             }}
                                         >
@@ -267,7 +262,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentUserId, accessToken }) => {
                                                 )}
                                             </div>
                                             <span style={{ fontWeight: 500, fontSize: 14 }}>{u.username}</span>
-                                        </Link>
+                                        </div>
                                         <button
                                             type="button"
                                             onClick={(e) => {

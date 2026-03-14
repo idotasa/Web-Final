@@ -120,6 +120,32 @@ const LoginPage: React.FC = () => {
                     flexDirection: "column",
                 }}
             >
+                <div
+                    style={{
+                        display: "flex",
+                        justifyContent: "center",
+                        marginBottom: 16,
+                    }}
+                >
+                    <div
+                        style={{
+                            width: 72,
+                            height: 72,
+                            borderRadius: "50%",
+                            overflow: "hidden",
+                            background: "#0f172a",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                        }}
+                    >
+                        <img
+                            src="/logo.png"
+                            alt="iO Social"
+                            style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                        />
+                    </div>
+                </div>
                 <h1 style={{ fontSize: 28, fontWeight: 700, marginBottom: 8, textAlign: "center" }}>
                     {isSignup ? "Join IO.Social" : "Welcome to IO.Social"}
                 </h1>

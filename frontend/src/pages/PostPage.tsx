@@ -181,8 +181,7 @@ const PostPage: React.FC = () => {
                         borderBottom: "1px solid rgba(148,163,184,0.15)",
                     }}
                 >
-                    <Link
-                        to={ownerId ? `/profile/${ownerId}` : "#"}
+                    <div
                         style={{
                             width: 44,
                             height: 44,
@@ -193,7 +192,6 @@ const PostPage: React.FC = () => {
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
-                            textDecoration: "none",
                             color: "#e5e7eb",
                         }}
                     >
@@ -202,20 +200,9 @@ const PostPage: React.FC = () => {
                         ) : (
                             <span style={{ fontSize: 20, fontWeight: 700 }}>{ownerName.charAt(0).toUpperCase()}</span>
                         )}
-                    </Link>
+                    </div>
                     <div>
-                        <Link
-                            to={ownerId ? `/profile/${ownerId}` : "#"}
-                            style={{
-                                fontWeight: 700,
-                                fontSize: 16,
-                                color: "#e5e7eb",
-                                textDecoration: "none",
-                                display: "block",
-                            }}
-                        >
-                            {ownerName}
-                        </Link>
+                        <span style={{ fontWeight: 700, fontSize: 16, color: "#e5e7eb", display: "block" }}>{ownerName}</span>
                         <time style={{ fontSize: 13, color: "#94a3b8" }}>
                             {new Date(post.createdAt).toLocaleString()}
                         </time>
@@ -369,49 +356,41 @@ const PostPage: React.FC = () => {
                                             marginBottom: 8,
                                         }}
                                     >
-                                        {authorId ? (
-                                            <Link
-                                                to={`/profile/${authorId}`}
+                                        <div
+                                            style={{
+                                                display: "flex",
+                                                alignItems: "center",
+                                                gap: 8,
+                                                color: "#e5e7eb",
+                                            }}
+                                        >
+                                            <div
                                                 style={{
+                                                    width: 28,
+                                                    height: 28,
+                                                    borderRadius: "50%",
+                                                    overflow: "hidden",
+                                                    background: "#1e293b",
+                                                    flexShrink: 0,
                                                     display: "flex",
                                                     alignItems: "center",
-                                                    gap: 8,
-                                                    textDecoration: "none",
-                                                    color: "#e5e7eb",
+                                                    justifyContent: "center",
                                                 }}
                                             >
-                                                <div
-                                                    style={{
-                                                        width: 28,
-                                                        height: 28,
-                                                        borderRadius: "50%",
-                                                        overflow: "hidden",
-                                                        background: "#1e293b",
-                                                        flexShrink: 0,
-                                                        display: "flex",
-                                                        alignItems: "center",
-                                                        justifyContent: "center",
-                                                    }}
-                                                >
-                                                    {authorImg ? (
-                                                        <img
-                                                            src={authorImg}
-                                                            alt=""
-                                                            style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                                                        />
-                                                    ) : (
-                                                        <span style={{ fontSize: 12, fontWeight: 700, color: "#64748b" }}>
-                                                            {authorName.charAt(0).toUpperCase()}
-                                                        </span>
-                                                    )}
-                                                </div>
-                                                <span style={{ fontWeight: 600, fontSize: 14 }}>{authorName}</span>
-                                            </Link>
-                                        ) : (
-                                            <span style={{ fontWeight: 600, fontSize: 14, color: "#e5e7eb" }}>
-                                                {authorName}
-                                            </span>
-                                        )}
+                                                {authorImg ? (
+                                                    <img
+                                                        src={authorImg}
+                                                        alt=""
+                                                        style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                                                    />
+                                                ) : (
+                                                    <span style={{ fontSize: 12, fontWeight: 700, color: "#64748b" }}>
+                                                        {authorName.charAt(0).toUpperCase()}
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <span style={{ fontWeight: 600, fontSize: 14 }}>{authorName}</span>
+                                        </div>
                                         <span style={{ fontSize: 12, color: "#64748b" }}>
                                             {new Date(c.createdAt).toLocaleString()}
                                         </span>
