@@ -29,7 +29,6 @@ type FeedPostCardProps = {
 const FeedPostCard: React.FC<FeedPostCardProps> = ({ post, accessToken, onLikeUpdate }) => {
     const [liking, setLiking] = useState(false);
     const owner = typeof post.owner === "string" ? null : post.owner;
-    const ownerId = owner?._id ?? (typeof post.owner === "string" ? post.owner : "");
     const username = owner?.username ?? "User";
     const imgUrl = owner?.imgUrl ?? "";
     const likesCount = post.likesCount ?? 0;

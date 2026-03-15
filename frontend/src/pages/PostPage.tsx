@@ -1,5 +1,5 @@
 import React, { FormEvent, useEffect, useState } from "react";
-import { Link, useParams, useNavigate } from "react-router-dom";
+import { Link, useParams, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import {
     getPostById,
@@ -17,11 +17,12 @@ const font = "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-ser
 const PostPage: React.FC = () => {
     const { postId } = useParams<"postId">();
     const navigate = useNavigate();
+    const location = useLocation();
+    const fromAISearch = location.state?.from === "ai-search";
     const { user, tokens } = useAuth();
     const [post, setPost] = useState<Post | null>(null);
     const [ownerName, setOwnerName] = useState<string>("User");
     const [ownerImg, setOwnerImg] = useState<string>("");
-    const [ownerId, setOwnerId] = useState<string>("");
     const [comments, setComments] = useState<CommentType[]>([]);
     const [loading, setLoading] = useState(true);
     const [commentText, setCommentText] = useState("");
@@ -56,15 +57,13 @@ const PostPage: React.FC = () => {
                         if (!cancelled) {
                             setOwnerName(profile.username);
                             setOwnerImg(profile.imgUrl || "");
-                            setOwnerId(profile._id);
                         }
                     } catch {
-                        if (!cancelled) setOwnerId(owner);
+                        // ignore
                     }
                 } else {
                     setOwnerName(owner.username);
                     setOwnerImg(owner.imgUrl || "");
-                    setOwnerId(owner._id);
                 }
                 setLikes(postData.likes?.length ?? 0);
                 if (typeof postData.isLiked === "boolean") setIsLiked(postData.isLiked);
@@ -152,14 +151,14 @@ const PostPage: React.FC = () => {
         <div style={{ fontFamily: font, color: "#e5e7eb", paddingBottom: 48 }}>
             <div style={{ marginBottom: 24 }}>
                 <Link
-                    to="/"
+                    to={fromAISearch ? "/ai-search" : "/"}
                     style={{
                         fontSize: 14,
                         color: "#94a3b8",
                         textDecoration: "none",
                     }}
                 >
-                    ← Back to feed
+                    ← {fromAISearch ? "Back to search results" : "Back to feed"}
                 </Link>
             </div>
 

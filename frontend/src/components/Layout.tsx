@@ -65,6 +65,19 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                 </Link>
                 <nav style={{ display: "flex", alignItems: "center", gap: 16 }}>
                     <Link
+                        to="/ai-search"
+                        style={{
+                            padding: "8px 14px",
+                            borderRadius: 8,
+                            color: "#e5e7eb",
+                            textDecoration: "none",
+                            border: "1px solid rgba(148,163,184,0.4)",
+                            background: location.pathname === "/ai-search" ? "rgba(14,165,233,0.15)" : "transparent",
+                        }}
+                    >
+                        ✨ AI Search
+                    </Link>
+                    <Link
                         to="/profile/me"
                         style={{
                             padding: "8px 14px",

@@ -5,10 +5,28 @@ import User from "../models/userModel";
 import BaseController from "./baseController";
 import { AuthRequest } from "../middleware/authMiddleware";
 import { IPost } from "../models/postModel";
+import * as aiService from "../services/aiService";
 
 class PostController extends BaseController<IPost> {
     constructor() {
         super(Post, "owner", null);
+    }
+
+    /**
+     * Override base post() to trigger RAG chunking after creation.
+     */
+    async post(req: AuthRequest, res: Response): Promise<void> {
+        try {
+            req.body.owner = req.user?._id;
+            const data = await Post.create(req.body);
+            // Fire-and-forget: chunk and embed the new post for vector search
+            aiService.chunkAndEmbed(data).catch((err) =>
+                console.error("[PostController] chunkAndEmbed failed:", err)
+            );
+            res.status(201).json(data);
+        } catch (error) {
+            res.status(500).json({ error: "An unknown error occurred" });
+        }
     }
 
     async feed(req: AuthRequest, res: Response): Promise<void> {
