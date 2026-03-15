@@ -3,6 +3,7 @@ import mongoose, { Document, Schema } from "mongoose";
 export interface IPost extends Document {
     title: string;
     content?: string;
+    category?: string;
     imgUrl?: string;
     owner: mongoose.Types.ObjectId;
     likes: mongoose.Types.ObjectId[];
@@ -15,6 +16,10 @@ const postSchema = new Schema<IPost>(
             required: true,
         },
         content: {
+            type: String,
+            default: "",
+        },
+        category: {
             type: String,
             default: "",
         },
