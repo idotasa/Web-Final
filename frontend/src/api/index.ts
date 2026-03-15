@@ -331,3 +331,76 @@ export async function uploadFile(file: File, accessToken?: string): Promise<stri
     const data = await res.json();
     return data.url as string;
 }
+
+// ───────────────── AI Search (RAG) ─────────────────
+
+export class AIApiError extends Error {
+    constructor(message: string, public status: number) {
+        super(message);
+        this.name = "AIApiError";
+    }
+}
+
+export type AISearchSource = {
+    postId: string;
+    snippet: string;
+};
+
+export type AISearchResponse = {
+    requestId: string;
+    answer: string;
+    sources: AISearchSource[];
+};
+
+export type AIParseResponse = {
+    requestId: string;
+    category: string | null;
+    dateRange: { from: string | null; to: string | null };
+    keywords: string[];
+    scope: string;
+};
+
+export async function aiSearch(
+    accessToken: string,
+    query: string,
+    scope: "all" | "friends" = "all"
+): Promise<AISearchResponse> {
+    const res = await fetch(`${API_BASE_URL}/v1/ai/search`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({ query, scope }),
+    });
+    if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new AIApiError(
+            data?.error || "AI search failed",
+            res.status
+        );
+    }
+    return (await res.json()) as AISearchResponse;
+}
+
+export async function aiParseQuery(
+    accessToken: string,
+    text: string
+): Promise<AIParseResponse> {
+    const res = await fetch(`${API_BASE_URL}/v1/ai/search/parse`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({ text }),
+    });
+    if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new AIApiError(
+            data?.error || "Query parsing failed",
+            res.status
+        );
+    }
+    return (await res.json()) as AIParseResponse;
+}
