@@ -6,10 +6,12 @@ import authRoutes from "./routes/authRoutes";
 import postRoutes from "./routes/postRoutes";
 import commentRoutes from "./routes/commentRoutes";
 import userRoutes from "./routes/userRoutes";
+import aiRoutes from "./routes/aiRoutes";
 import { specs, swaggerUi } from "./swagger";
 import upload from "./middleware/uploadMiddleware";
 import config from "./config";
 import { errorHandler } from "./middleware/errorHandler";
+import { ensureVectorSearchIndex } from "./config/initVectorIndex";
 
 const initApp = (): Promise<Express> => {
     return new Promise<Express>((resolve, reject) => {
@@ -17,7 +19,10 @@ const initApp = (): Promise<Express> => {
 
         mongoose
             .connect(dbUri)
-            .then(() => {
+            .then(async () => {
+                // Auto-create vector search index on startup (Lecture 08)
+                await ensureVectorSearchIndex();
+
                 const app = express();
                 app.use(cors({ origin: config.CORS_ORIGIN }));
                 app.use(express.json());
@@ -41,6 +46,7 @@ const initApp = (): Promise<Express> => {
                 app.use("/post", postRoutes);
                 app.use("/comment", commentRoutes);
                 app.use("/user", userRoutes);
+                app.use("/v1/ai", aiRoutes);
 
                 // Global error handler (should be last)
                 app.use(errorHandler);
@@ -52,3 +58,4 @@ const initApp = (): Promise<Express> => {
 };
 
 export default initApp;
+

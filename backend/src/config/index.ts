@@ -18,6 +18,11 @@ const config = {
     ACCESS_TOKEN_SECRET: process.env.ACCESS_TOKEN_SECRET!,
     REFRESH_TOKEN_SECRET: process.env.REFRESH_TOKEN_SECRET!,
     GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID!,
+
+    // AI / LLM
+    GEMINI_API_KEY: process.env.GEMINI_API_KEY || "",
+    LLM_MOCK_MODE: process.env.LLM_MOCK_MODE === "true",
+    LLM_RATE_LIMIT_RPM: parseInt(process.env.LLM_RATE_LIMIT_RPM || "15", 10),
 };
 
 export default config;
